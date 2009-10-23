@@ -78,21 +78,19 @@ class TilemFrame(wx.MDIParentFrame):
 
 		wx.MDIParentFrame.__init__(self, None, -1, "MDI Parent", size=(600,400))
 
-		self.winCount = 0	
+		self.winCount = 0
 
 		menubar = wx.MenuBar()
 		#fileMenu = self.CreateFileMenu()
 		menubar.Append(self.CreateFileMenu(), "File")
 		menubar.Append(self.CreateEditMenu(), "Edit")
-		menubar.Append(self.CreateImageMenu(), "Image")
 		menubar.Append(self.CreateViewMenu(), "View")
+		menubar.Append(self.CreateImageMenu(), "Image")
 		menubar.Append(self.CreateNavigateMenu(), "Navigate")
 		self.SetMenuBar(menubar)
 		self.CreateStatusBar()
 		menubar.Append(self.CreateHelpMenu(), "Help")
 
-
-		self.Bind(wx.EVT_MENU, self.OnNewWindow, id=ID_New)
 		self.Bind(wx.EVT_MENU, self.OnExit, id=ID_Exit)
 
 		if SHOW_BACKGROUND:
@@ -100,22 +98,7 @@ class TilemFrame(wx.MDIParentFrame):
 			self.GetClientWindow().Bind(
 				wx.EVT_ERASE_BACKGROUND, self.OnEraseBackground
 			)
-		
 
-	def CreateMenus():
-		#filemenu = wx.Menu()
-		editMenu = wx.Menu()
-		menu = wx.Menu()
-		menu.Append(ID_New, "&New Window")
-		menu.AppendSeparator()
-		menu.Append(ID_Exit, "E&xit")
-		
-		menubar = wx.MenuBar()
-		menubar.Append(menu, "&File")
-		self.SetMenuBar(menubar)
-		self.CreateStatusBar()
-		self.winCount = self.winCount + 1		
-		
 	def CreateFileMenu(self):
 		"""
 		Creates the 'File' menu on the menu bar
@@ -125,16 +108,20 @@ class TilemFrame(wx.MDIParentFrame):
 		newMenuItem = wx.MenuItem(fileMenu, ID_NewMenuItem, "New...\tCtrl+N", "New...", wx.ITEM_NORMAL)
 		newMenuItem.SetBitmap(wx.Bitmap("icons/New-16.png", wx.BITMAP_TYPE_PNG))
 		fileMenu.AppendItem(newMenuItem)
+		self.Bind(wx.EVT_MENU, self.OnNew, newMenuItem)
 
 		openMenuItem = wx.MenuItem(fileMenu, ID_OpenMenuItem, "Open...\tCtrl+O", "Open...", wx.ITEM_NORMAL)
 		openMenuItem.SetBitmap(wx.Bitmap("icons/Open-16.png", wx.BITMAP_TYPE_PNG))
 		fileMenu.AppendItem(openMenuItem)
+		self.Bind(wx.EVT_MENU, self.OnOpen, openMenuItem)
 
 		reOpenMenuItem = wx.MenuItem(fileMenu, ID_ReopenMenuItem, "Reopen", "", wx.ITEM_NORMAL)
 		fileMenu.AppendItem(reOpenMenuItem)
+		self.Bind(wx.EVT_MENU, self.OnReopen, reOpenMenuItem)
 
 		importImageMenuItem = wx.MenuItem(fileMenu, ID_ImportImageMenuItem, "Import Image", "", wx.ITEM_NORMAL)
 		fileMenu.AppendItem(importImageMenuItem)
+		self.Bind(wx.EVT_MENU, self.OnImportImage, importImageMenuItem)
 
 		fileMenu.AppendSeparator()
 
@@ -227,7 +214,6 @@ class TilemFrame(wx.MDIParentFrame):
 		pixelGridMenuItem = wx.MenuItem(modeMenu, ID_PixelGridMenuItem, "Pixel Grid", "", wx.ITEM_CHECK)
 		viewMenu.AppendItem(pixelGridMenuItem)
 
-
 		return viewMenu
 
 	def CreateImageMenu(self):
@@ -291,18 +277,125 @@ class TilemFrame(wx.MDIParentFrame):
 #####
 # Event handlers
 #####
-	def OnExit(self, evt):
-		self.Close(True)
 
-
-	def OnNewWindow(self, evt):
-		
-		self.winCount = self.winCount + 1
+#File Menu Events
+	def OnNew(self, evt):
 		win = wx.MDIChildFrame(self, -1, "Child Window: %d" % self.winCount)
 		canvas = ScrolledWindow.MyCanvas(win)
 		win.Show(True)
+		self.winCount = self.winCount + 1
 
+	def OnOpen(self, evt):
+		print "OnOpen"
 
+	def OnReopen(self, evt):
+		print "OnReopen"
+
+	def OnImportImage(self, evt):
+		print "OnImportImage"
+
+	def OnSave(self, evt):
+		print "OnSave"
+
+	def OnSaveAs(self, evt):
+		print "OnSaveAs"
+
+	def OnSaveSelection(self, evt):
+		print "OnSaveSelection"
+
+	def OnClose(self, evt):
+		print "OnClose"
+
+	def OnCloseAll(self, evt):
+		print "OnCloseAll"
+
+	def OnExit(self, evt):
+		self.Close(True)
+
+#Edit Menu Events
+	def OnUndo(self, evt):
+		print "OnUndo"
+
+	def OnRedo(self, evt):
+		print "OnRedo"
+
+	def OnCut(self, evt):
+		print "OnCut"
+
+	def OnCopy(self, evt):
+		print "OnCopy"
+
+	def OnPaste(self, evt):
+		print "OnPaste"
+
+	def OnDelete(self, evt):
+		print "OnDelete"
+
+#View Menu Events
+	def OnMode(self, evt):
+		print "OnMode"
+
+	def OnBlockSize(self, evt):
+		print "OnBlockSize"
+
+	def OnRowInterleaveBlocks(self, evt):
+		print "OnRowInterleaveBlocks"
+
+	def OnShowBlockGrid(self, evt):
+		print "OnShowBlockGrid"
+
+	def OnShowTileGrid(self, evt):
+		print "OnShowTileGrid"
+
+	def OnShowPixelGrid(self, evt):
+		print "OnShowPixelGrid"
+
+	def OnShowColorPalette(self, evt):
+		print "OnShowColorPalette"
+
+	def OnShowStatusbar(self, evt):
+		print "OnShowStatusbar"
+
+	def OnShowToolbar(self, evt):
+		print "OnShowToolbar"
+
+#Image
+	def OnFlipHorizontal(self, evt):
+		print "OnFlipHorizontal"
+
+	def OnFlipVertical(self, evt):
+		print "OnFlipVertical"
+
+	def OnRotateClockwise(self, evt):
+		print "OnRotateClockwise"
+
+	def OnRotateCounterClockwise(self, evt):
+		print "OnRotateCounterClockwise"
+
+	def OnCanvasSize(self, evt):
+		print "OnCanvasSize"
+
+	def OnSelectionSize(self, evt):
+		print "OnSelectionSize"
+
+#Navigate
+	def OnGoto(self, evt):
+		print "OnGoto"
+
+	def OnAddBookmark(self, evt):
+		print "OnAddBookmark"
+
+	def OnOrganizeBookmarks(self, evt):
+		print "OnOrganizeBookmarks"
+
+	def OnHelpTopics(self, evt):
+		print "OnHelpTopics"
+
+	def OnAbout(self, evt):
+		print "OnAbout"
+#Help
+
+# Others
 	def OnEraseBackground(self, evt):
 		dc = evt.GetDC()
 		evt.GetId()
