@@ -1,8 +1,4 @@
-# A very simple setup script to create 2 executables.
-#
-# test_wx.py is a simple wxPython program, it will be converted into a
-# console-less program.
-#
+# A simple script which creates an executible for a non-console app
 #
 # Run the build process by entering 'setup.py py2exe' or
 # 'python setup.py py2exe' in a console prompt.
