@@ -91,6 +91,7 @@ class TilemFrame(wx.MDIParentFrame):
 		self.CreateStatusBar()
 		menubar.Append(self.CreateHelpMenu(), "Help")
 
+		self.CreateTopToolBar()
 		#self.Bind(wx.EVT_MENU, self.OnExit, id=ID_Exit)
 
 		if SHOW_BACKGROUND:
@@ -99,6 +100,39 @@ class TilemFrame(wx.MDIParentFrame):
 				wx.EVT_ERASE_BACKGROUND, self.OnEraseBackground
 			)
 
+	def CreateTopToolBar(self):
+		toolbar = self.CreateToolBar()
+		
+		entries = [["New",  "icons/New-16.png",    self.OnNew],
+		           ["Open", "icons/Open-16.png",   self.OnOpen],
+		           ["Save", "icons/SaveAs-16.png", self.OnSaveAs],
+		           ["", "", ""],
+		           ["Cut",   "icons/Cut-16.png",   self.OnCut],
+		           ["Copy",  "icons/Copy-16.png",  self.OnCopy],
+		           ["Paste", "icons/Paste-16.png", self.OnPaste],
+		           ["", "", "", ""],
+		           ["Undo", "icons/Undo-16.png", self.OnUndo],
+		           ["Redo", "icons/Redo-16.png", self.OnRedo],
+		           ["", "", ""]]	
+			
+		for item in entries:
+			
+			label = item[0]
+			icon = item[1]
+			handler = item[2]
+			
+			if not label:
+				toolbar.AddSeparator()
+			else:
+				bmp = wx.Bitmap(icon, wx.BITMAP_TYPE_PNG)
+				#AddSimpleTool(self, id, bitmap, shortHelpString='', longHelpString='', isToggle=0)								
+				tool = toolbar.AddSimpleTool(-1, bmp, label)
+				self.Bind(wx.EVT_MENU, handler, tool)
+				
+		toolbar.Realize()
+
+	
+			
 	def CreateFileMenu(self):
 		"""
 		Creates the 'File' menu on the menu bar

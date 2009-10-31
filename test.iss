@@ -15,7 +15,7 @@ AppUpdatesURL=http://www.example.com/
 DefaultDirName={pf}\Tilem
 DefaultGroupName=Tilem
 AllowNoIcons=yes
-LicenseFile=C:\Documents and Settings\mbeisser\Desktop\gpl-2.0.txt
+LicenseFile=C:\tilemPy\license.txt
 OutputBaseFilename=setup
 Compression=lzma
 SolidCompression=yes
@@ -27,23 +27,23 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "C:\Documents and Settings\mbeisser\Desktop\tilemPy\dist\tilem.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Documents and Settings\mbeisser\Desktop\tilemPy\dist\bz2.pyd"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Documents and Settings\mbeisser\Desktop\tilemPy\dist\library.zip"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Documents and Settings\mbeisser\Desktop\tilemPy\dist\python26.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Documents and Settings\mbeisser\Desktop\tilemPy\dist\select.pyd"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Documents and Settings\mbeisser\Desktop\tilemPy\dist\unicodedata.pyd"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Documents and Settings\mbeisser\Desktop\tilemPy\dist\w9xpopen.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Documents and Settings\mbeisser\Desktop\tilemPy\dist\wx._controls_.pyd"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Documents and Settings\mbeisser\Desktop\tilemPy\dist\wx._core_.pyd"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Documents and Settings\mbeisser\Desktop\tilemPy\dist\wx._gdi_.pyd"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Documents and Settings\mbeisser\Desktop\tilemPy\dist\wx._misc_.pyd"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Documents and Settings\mbeisser\Desktop\tilemPy\dist\wx._windows_.pyd"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Documents and Settings\mbeisser\Desktop\tilemPy\dist\wxbase28uh_net_vc.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Documents and Settings\mbeisser\Desktop\tilemPy\dist\wxbase28uh_vc.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Documents and Settings\mbeisser\Desktop\tilemPy\dist\wxmsw28uh_adv_vc.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Documents and Settings\mbeisser\Desktop\tilemPy\dist\wxmsw28uh_core_vc.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Documents and Settings\mbeisser\Desktop\tilemPy\dist\wxmsw28uh_html_vc.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\tilemPy\dist\tilem.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\tilemPy\dist\bz2.pyd"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\tilemPy\dist\library.zip"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\tilemPy\dist\python26.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\tilemPy\dist\select.pyd"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\tilemPy\dist\unicodedata.pyd"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\tilemPy\dist\w9xpopen.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\tilemPy\dist\wx._controls_.pyd"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\tilemPy\dist\wx._core_.pyd"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\tilemPy\dist\wx._gdi_.pyd"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\tilemPy\dist\wx._misc_.pyd"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\tilemPy\dist\wx._windows_.pyd"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\tilemPy\dist\wxbase28uh_net_vc.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\tilemPy\dist\wxbase28uh_vc.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\tilemPy\dist\wxmsw28uh_adv_vc.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\tilemPy\dist\wxmsw28uh_core_vc.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\tilemPy\dist\wxmsw28uh_html_vc.dll"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
@@ -52,5 +52,6 @@ Name: "{commondesktop}\Tilem"; Filename: "{app}\tilem.exe"; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\tilem.exe"; Description: "{cm:LaunchProgram,Tilem}"; Flags: nowait postinstall skipifsilent
+
 
 
