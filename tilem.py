@@ -4,7 +4,7 @@
 __author__="Matt Beisser"
 __date__ ="$Oct 16, 2009 6:33:40 PM$"
 
-from dialogs import GoToDialog
+from gotoAddress import GotoDialog
 import  wx
 
 # Importing ScrolledWindow demo to make use of the MyCanvas
@@ -459,16 +459,21 @@ class TilemFrame(wx.MDIParentFrame):
 
 #Navigate
 	def OnGoto(self, evt):
-		dialog = GoToDialog(self)
+		dialog = GotoDialog(self)
+
 		if dialog.ShowModal() == wx.ID_OK:
-		   selected = dialog.GetSelections()
-		   for selection in selected:
-			  print str ( selection ) + ': ' + choices [ selection ]
+                    print 'HI!'
+                else:
+                    print 'bye'
+                    dialog.Destroy()
+#		   selected = dialog.GetSelections()
+#		   for selection in selected:
+#			  print str ( selection ) + ': ' + choices [ selection ]
 
 		# The user exited the dialog without pressing the "OK" button
-		else:
-			dialog.Destroy()
-		print "OnGoto"
+#		else:
+#                    print 'bye'
+#                    dialog.Destroy()
 
 	def OnAddBookmark(self, evt):
 		print "OnAddBookmark"
