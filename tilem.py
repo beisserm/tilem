@@ -5,6 +5,7 @@ __author__="Matt Beisser"
 __date__ ="$Oct 16, 2009 6:33:40 PM$"
 
 from gotoAddress import GotoDialog
+from ToolPanel import ToolPanel
 import  wx
 
 # Importing ScrolledWindow demo to make use of the MyCanvas
@@ -13,6 +14,240 @@ import  ScrolledWindow
 import  images
 
 SHOW_BACKGROUND = 1
+
+#EVT_ACTIVATE
+#EVT_ACTIVATE_APP
+#EVT_BUTTON
+#EVT_CALCULATE_LAYOUT
+#EVT_CHAR
+#EVT_CHAR_HOOK
+#EVT_CHECKBOX
+#EVT_CHECKLISTBOX
+#EVT_CHILD_FOCUS
+#EVT_CHOICE
+#EVT_CHOICEBOOK_PAGE_CHANGED
+#EVT_CHOICEBOOK_PAGE_CHANGING
+#EVT_CLOSE
+#EVT_COLLAPSIBLEPANE_CHANGED
+#EVT_COLOURPICKER_CHANGED
+#EVT_COMBOBOX
+#EVT_COMMAND
+#EVT_COMMAND_ENTER
+#EVT_COMMAND_FIND
+#EVT_COMMAND_FIND_CLOSE
+#EVT_COMMAND_FIND_NEXT
+#EVT_COMMAND_FIND_REPLACE
+#EVT_COMMAND_FIND_REPLACE_ALL
+#EVT_COMMAND_KILL_FOCUS
+#EVT_COMMAND_LEFT_CLICK
+#EVT_COMMAND_LEFT_DCLICK
+#EVT_COMMAND_RANGE
+#EVT_COMMAND_RIGHT_CLICK
+#EVT_COMMAND_RIGHT_DCLICK
+#EVT_COMMAND_SCROLL
+#EVT_COMMAND_SCROLL_BOTTOM
+#EVT_COMMAND_SCROLL_CHANGED
+#EVT_COMMAND_SCROLL_ENDSCROLL
+#EVT_COMMAND_SCROLL_LINEDOWN
+#EVT_COMMAND_SCROLL_LINEUP
+#EVT_COMMAND_SCROLL_PAGEDOWN
+#EVT_COMMAND_SCROLL_PAGEUP
+#EVT_COMMAND_SCROLL_THUMBRELEASE
+#EVT_COMMAND_SCROLL_THUMBTRACK
+#EVT_COMMAND_SCROLL_TOP
+#EVT_COMMAND_SET_FOCUS
+#EVT_CONTEXT_MENU
+#EVT_DATE_CHANGED
+#EVT_DETAILED_HELP
+#EVT_DETAILED_HELP_RANGE
+#EVT_DIRPICKER_CHANGED
+#EVT_DISPLAY_CHANGED
+#EVT_DROP_FILES
+#EVT_END_PROCESS
+#EVT_END_SESSION
+#EVT_ENTER_WINDOW
+#EVT_ERASE_BACKGROUND
+#EVT_FILEPICKER_CHANGED
+#EVT_FIND
+#EVT_FIND_CLOSE
+#EVT_FIND_NEXT
+#EVT_FIND_REPLACE
+#EVT_FIND_REPLACE_ALL
+#EVT_FONTPICKER_CHANGED
+#EVT_HELP
+#EVT_HELP_RANGE
+#EVT_HIBERNATE
+#EVT_HOTKEY
+#EVT_HYPERLINK
+#EVT_ICONIZE
+#EVT_IDLE
+#EVT_INIT_DIALOG
+#EVT_JOYSTICK_EVENTS
+#EVT_JOY_BUTTON_DOWN
+#EVT_JOY_BUTTON_UP
+#EVT_JOY_MOVE
+#EVT_JOY_ZMOVE
+#EVT_KEY_DOWN
+#EVT_KEY_UP
+#EVT_KILL_FOCUS
+#EVT_LEAVE_WINDOW
+#EVT_LEFT_DCLICK
+#EVT_LEFT_DOWN
+#EVT_LEFT_UP
+#EVT_LISTBOOK_PAGE_CHANGED
+#EVT_LISTBOOK_PAGE_CHANGING
+#EVT_LISTBOX
+#EVT_LISTBOX_DCLICK
+#EVT_LIST_BEGIN_DRAG
+#EVT_LIST_BEGIN_LABEL_EDIT
+#EVT_LIST_BEGIN_RDRAG
+#EVT_LIST_CACHE_HINT
+#EVT_LIST_COL_BEGIN_DRAG
+#EVT_LIST_COL_CLICK
+#EVT_LIST_COL_DRAGGING
+#EVT_LIST_COL_END_DRAG
+#EVT_LIST_COL_RIGHT_CLICK
+#EVT_LIST_DELETE_ALL_ITEMS
+#EVT_LIST_DELETE_ITEM
+#EVT_LIST_END_LABEL_EDIT
+#EVT_LIST_INSERT_ITEM
+#EVT_LIST_ITEM_ACTIVATED
+#EVT_LIST_ITEM_DESELECTED
+#EVT_LIST_ITEM_FOCUSED
+#EVT_LIST_ITEM_MIDDLE_CLICK
+#EVT_LIST_ITEM_RIGHT_CLICK
+#EVT_LIST_ITEM_SELECTED
+#EVT_LIST_KEY_DOWN
+#EVT_MAXIMIZE
+#EVT_MENU
+#EVT_MENU_CLOSE
+#EVT_MENU_HIGHLIGHT
+#EVT_MENU_HIGHLIGHT_ALL
+#EVT_MENU_OPEN
+#EVT_MENU_RANGE
+#EVT_MIDDLE_DCLICK
+#EVT_MIDDLE_DOWN
+#EVT_MIDDLE_UP
+#EVT_MOTION
+#EVT_MOUSEWHEEL
+#EVT_MOUSE_CAPTURE_CHANGED
+#EVT_MOUSE_CAPTURE_LOST
+#EVT_MOUSE_EVENTS
+#EVT_MOVE
+#EVT_MOVING
+#EVT_NAVIGATION_KEY
+#EVT_NC_PAINT
+#EVT_NOTEBOOK_PAGE_CHANGED
+#EVT_NOTEBOOK_PAGE_CHANGING
+#EVT_PAINT
+#EVT_PALETTE_CHANGED
+#EVT_POWER_RESUME
+#EVT_POWER_SUSPENDED
+#EVT_POWER_SUSPENDING
+#EVT_POWER_SUSPEND_CANCEL
+#EVT_QUERY_END_SESSION
+#EVT_QUERY_LAYOUT_INFO
+#EVT_QUERY_NEW_PALETTE
+#EVT_RADIOBOX
+#EVT_RADIOBUTTON
+#EVT_RIGHT_DCLICK
+#EVT_RIGHT_DOWN
+#EVT_RIGHT_UP
+#EVT_SASH_DRAGGED
+#EVT_SASH_DRAGGED_RANGE
+#EVT_SCROLL
+#EVT_SCROLLBAR
+#EVT_SCROLLWIN
+#EVT_SCROLLWIN_BOTTOM
+#EVT_SCROLLWIN_LINEDOWN
+#EVT_SCROLLWIN_LINEUP
+#EVT_SCROLLWIN_PAGEDOWN
+#EVT_SCROLLWIN_PAGEUP
+#EVT_SCROLLWIN_THUMBRELEASE
+#EVT_SCROLLWIN_THUMBTRACK
+#EVT_SCROLLWIN_TOP
+#EVT_SCROLL_BOTTOM
+#EVT_SCROLL_CHANGED
+#EVT_SCROLL_ENDSCROLL
+#EVT_SCROLL_LINEDOWN
+#EVT_SCROLL_LINEUP
+#EVT_SCROLL_PAGEDOWN
+#EVT_SCROLL_PAGEUP
+#EVT_SCROLL_THUMBRELEASE
+#EVT_SCROLL_THUMBTRACK
+#EVT_SCROLL_TOP
+#EVT_SEARCHCTRL_CANCEL_BTN
+#EVT_SEARCHCTRL_SEARCH_BTN
+#EVT_SET_CURSOR
+#EVT_SET_FOCUS
+#EVT_SHOW
+#EVT_SIZE
+#EVT_SIZING
+#EVT_SLIDER
+#EVT_SPIN
+#EVT_SPINCTRL
+#EVT_SPIN_DOWN
+#EVT_SPIN_UP
+#EVT_SPLITTER_DCLICK
+#EVT_SPLITTER_DOUBLECLICKED
+#EVT_SPLITTER_SASH_POS_CHANGED
+#EVT_SPLITTER_SASH_POS_CHANGING
+#EVT_SPLITTER_UNSPLIT
+#EVT_SYS_COLOUR_CHANGED
+#EVT_TASKBAR_CLICK
+#EVT_TASKBAR_LEFT_DCLICK
+#EVT_TASKBAR_LEFT_DOWN
+#EVT_TASKBAR_LEFT_UP
+#EVT_TASKBAR_MOVE
+#EVT_TASKBAR_RIGHT_DCLICK
+#EVT_TASKBAR_RIGHT_DOWN
+#EVT_TASKBAR_RIGHT_UP
+#EVT_TEXT
+#EVT_TEXT_COPY
+#EVT_TEXT_CUT
+#EVT_TEXT_ENTER
+#EVT_TEXT_MAXLEN
+#EVT_TEXT_PASTE
+#EVT_TEXT_URL
+#EVT_TIMER
+#EVT_TOGGLEBUTTON
+#EVT_TOOL
+#EVT_TOOLBOOK_PAGE_CHANGED
+#EVT_TOOLBOOK_PAGE_CHANGING
+#EVT_TOOL_ENTER
+#EVT_TOOL_RANGE
+#EVT_TOOL_RCLICKED
+#EVT_TOOL_RCLICKED_RANGE
+#EVT_TREEBOOK_NODE_COLLAPSED
+#EVT_TREEBOOK_NODE_EXPANDED
+#EVT_TREEBOOK_PAGE_CHANGED
+#EVT_TREEBOOK_PAGE_CHANGING
+#EVT_TREE_BEGIN_DRAG
+#EVT_TREE_BEGIN_LABEL_EDIT
+#EVT_TREE_BEGIN_RDRAG
+#EVT_TREE_DELETE_ITEM
+#EVT_TREE_END_DRAG
+#EVT_TREE_END_LABEL_EDIT
+#EVT_TREE_GET_INFO
+#EVT_TREE_ITEM_ACTIVATED
+#EVT_TREE_ITEM_COLLAPSED
+#EVT_TREE_ITEM_COLLAPSING
+#EVT_TREE_ITEM_EXPANDED
+#EVT_TREE_ITEM_EXPANDING
+#EVT_TREE_ITEM_GETTOOLTIP
+#EVT_TREE_ITEM_MENU
+#EVT_TREE_ITEM_MIDDLE_CLICK
+#EVT_TREE_ITEM_RIGHT_CLICK
+#EVT_TREE_KEY_DOWN
+#EVT_TREE_SEL_CHANGED
+#EVT_TREE_SEL_CHANGING
+#EVT_TREE_SET_INFO
+#EVT_TREE_STATE_IMAGE_CLICK
+#EVT_UPDATE_UI
+#EVT_UPDATE_UI_RANGE
+#EVT_VLBOX
+#EVT_WINDOW_CREATE
+#EVT_WINDOW_DESTROY
 
 #----------------------------------------------------------------------
 ID_New  = wx.NewId()
@@ -72,34 +307,102 @@ ID_ToolbarMenuItem = wx.NewId()
 # Help Menu Ids
 ID_HelpTopicsMenuItem = wx.NewId()
 ID_AboutMenuItem = wx.NewId()
+
+ID_SidePanel = wx.NewId()
 #----------------------------------------------------------------------
 
 class TilemFrame(wx.MDIParentFrame):
 	def __init__(self):
 
-		wx.MDIParentFrame.__init__(self, None, -1, "Tilem", size=(600, 400))
+            wx.MDIParentFrame.__init__(self, None, -1, "Tilem", size=(600, 400))
 
-		self.winCount = 0
+            self.winCount = 0
 
-		menubar = wx.MenuBar()
-		fileMenu = self.CreateFileMenu()
-		menubar.Append(self.CreateFileMenu(), "File")
-		menubar.Append(self.CreateEditMenu(), "Edit")
-		menubar.Append(self.CreateViewMenu(), "View")
-		menubar.Append(self.CreateImageMenu(), "Image")
-		menubar.Append(self.CreateNavigateMenu(), "Navigate")
-		self.SetMenuBar(menubar)
-		self.CreateStatusBar()
-		menubar.Append(self.CreateHelpMenu(), "Help")
+            menubar = wx.MenuBar()
+            menubar.Append(self.CreateFileMenu(), "File")
+            menubar.Append(self.CreateEditMenu(), "Edit")
+            menubar.Append(self.CreateViewMenu(), "View")
+            menubar.Append(self.CreateImageMenu(), "Image")
+            menubar.Append(self.CreateNavigateMenu(), "Navigate")
+            self.SetMenuBar(menubar)
+            self.CreateStatusBar()
+            menubar.Append(self.CreateHelpMenu(), "Help")
 
-		self.CreateTopToolBar()
-		#self.Bind(wx.EVT_MENU, self.OnExit, id=ID_Exit)
+            self.tb1 = self.CreateTopToolBar()
+#            tb2 = wx.ToolBar(self, -1)
+#            tb2.Realize()
+#
+#            box = wx.BoxSizer(wx.VERTICAL)
+#            box.Add(tb1,0,wx.ALL | wx.ALIGN_LEFT | wx.EXPAND,4)
+#            box.Add(tb2,0,wx.ALL | wx.ALIGN_RIGHT ,4)
+#            box.Fit(self);
+#            self.SetAutoLayout(True)
+#            self.SetSizer(box)
 
-		if SHOW_BACKGROUND:
-			self.bg_bmp = images.GridBG.GetBitmap()
-			self.GetClientWindow().Bind(
-				wx.EVT_ERASE_BACKGROUND, self.OnEraseBackground
-			)
+#            self.CreateSidePanel()
+            #self.Bind(wx.EVT_MENU, self.OnExit, id=ID_Exit)
+
+            self.toolPanel = ToolPanel(self)
+
+            self.SetClientSize(wx.Size(392, 216))
+
+            wx.EVT_MAXIMIZE(self, self.onMaximize)
+            wx.EVT_ICONIZE(self, self.onIconize)
+            wx.EVT_CHILD_FOCUS(self, self.onActivate)
+
+
+#            wx.EVT_SHOW(self, self.onShow)
+#            wx.EVT_SIZE(self, self.onSize)
+
+#            self.toolBar1 = wx.ToolBar(id=-1,
+#                  name='toolBar1', parent=self, pos=wx.Point(34, 0),
+#                  size=wx.Size(26, 218),
+#                  style=wx.TB_VERTICAL | wx.TB_HORIZONTAL | wx.NO_BORDER)
+#
+#            self.toolBar2 = wx.ToolBar(id=-1,
+#                  name='toolBar2', parent=self, pos=wx.Point(2, 0), size=wx.Size(26,
+#                  218), style=wx.TB_VERTICAL | wx.NO_BORDER)
+
+            if SHOW_BACKGROUND:
+                    self.bg_bmp = images.GridBG.GetBitmap()
+                    self.GetClientWindow().Bind(
+                            wx.EVT_ERASE_BACKGROUND, self.OnEraseBackground
+                    )
+#####
+
+        def onMaximize(self, event):
+            '''
+            Handles the window's maximize event. This involves moving the tool
+            windows back to logical places.
+            '''
+            if(not self.IsMaximized()):
+                print 'maximize'
+            else:
+                print 'restore'
+            self.miniFrame.SetPosition(wx.Point(20,20))
+            event.Skip()
+
+        def onIconize(self, event):
+            '''
+            Handles the windows minimize
+            '''
+            if(not self.IsIconized()):
+                print 'icon!'
+            else:
+                print 'no icon!'
+            event.Skip()
+
+        def onShow(self, event):
+            print 'showing!'
+            event.Skip()
+
+        def onActivate(self, event):
+            if(self.IsActive()):
+                self.toolPanel.SetTransparent(150)
+            else:
+                self.toolPanel.SetTransparent(255)
+            event.Skip()
+#####
 
 	def CreateTopToolBar(self):
 		toolbar = self.CreateToolBar()
@@ -132,8 +435,27 @@ class TilemFrame(wx.MDIParentFrame):
 				
 		toolbar.Realize()
 
-	
-			
+                return toolbar
+
+        def CreateSidePanel(self):
+#            self.panel1 = wx.Panel(id=wx.NewId(), name='panel1',
+#                  parent=self, pos=wx.Point(0, 0), size=wx.Size(392, 216),
+#                  style=wx.TAB_TRAVERSAL)
+            self.panel1 = SidePanel(self)
+            self.panel1.Raise()
+#
+#            self.button1 = wx.Button(id=wx.NewId(),
+#                  label='button1', name='button1', parent=self.panel1,
+#                  pos=wx.Point(208, 136), size=wx.Size(75, 23), style=0)
+#            panel1 = SidePanel(self)
+#            panel1.Raise()
+
+#            self.SetToolBar(panel1)
+
+#            self.panel1.Realize()
+
+
+
 	def CreateFileMenu(self):
 		"""
 		Creates the 'File' menu on the menu bar

@@ -3,7 +3,7 @@
 import wx
 
 def create(parent):
-	return SidePanel(parent)
+	return ToolPanel(parent)
 
 [wxID_SidePanel, wxID_SidePanelBITMAPBUTTON1, wxID_SidePanelBITMAPBUTTON10,
  wxID_SidePanelBITMAPBUTTON11, wxID_SidePanelBITMAPBUTTON12,
@@ -29,7 +29,11 @@ class ToolPanel(wx.MiniFrame):
             self.pane = pane = wx.Panel(id=-1, name='panel1',
                   parent=self, pos=wx.Point(0, 0), size=wx.Size(72, 320),
                   style=wx.TAB_TRAVERSAL)
+#        self.Bind(wx.EVT_TIMER, self.AlphaCycle)
 
+#            self.Bind(wx.EVT_SET_FOCUS, self.onKillFocus)
+#            self.SetTransparent(100)
+# Setup buttons
             self.bitmapButton1 = wx.BitmapButton(bitmap=wx.Bitmap(u'C:/tilemPy/icons/select-16.png',
                       wx.BITMAP_TYPE_PNG), id=wxID_SidePanelBITMAPBUTTON1,
                       name='bitmapButton1', parent=pane, pos=wx.Point(4, 4),

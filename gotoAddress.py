@@ -42,7 +42,7 @@ class GotoDialog(wx.Dialog):
 			  name='AddressTextBox', parent=self, pos=wx.Point(16, 48),
 			  size=wx.Size(112, 21), style=0, value='')
 		self.AddressTextBox.SetMaxLength(10)
-
+                
 		self.RadixRadioBox = wx.RadioBox(choices=['Hex (16)', 'Dec (10)'],
 			  id=wxID_RADIO_BOX, label='Radix', majorDimension=1,
 			  name='RadixRadioBox', parent=self, pos=wx.Point(264, 24),
