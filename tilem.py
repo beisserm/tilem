@@ -6,12 +6,12 @@ __date__ ="$Oct 16, 2009 6:33:40 PM$"
 
 from gotoAddress import GotoDialog
 from ToolPanel import ToolPanel
+
 import  wx
 
-# Importing ScrolledWindow demo to make use of the MyCanvas
-# class defined within.
-import  ScrolledWindow
-import  images
+#MDI child windows...
+import canvas
+import images
 
 SHOW_BACKGROUND = 1
 
@@ -311,133 +311,145 @@ ID_AboutMenuItem = wx.NewId()
 ID_SidePanel = wx.NewId()
 #----------------------------------------------------------------------
 
+
+romFileTypes = "All supported formats|*.chr;*.fds;*.fig;*.gb;*.gba;*.gbc;*.gg;*.md;*.n64;*.nes;\
+*.ngp;*.ngpc;*.pce;*.sfc;*.sgb;*.smc;*.smd;*.sms;*.v64;*.vb;*.ws;*.wsc;*.xdf;*.z64|\
+Famicon (*.fds)|*.fds|\
+Game Gear (*.gg)|*.gg|\
+GameBoy (*.gb, *.gbc, *.sgb)|*.gb;*.gbc;*.sgb|\
+GameBoy Advance (*.gba)|*.gba|\
+NeoGeo Pocket (*.ngp, *.ngpc)|*.ngp;*.ngpc|\
+Nintendo (*.nes, *.chr)|*.nes;*.chr|\
+Nintendo 64 (*.n64, *.v64, *.z64)|*.n64;*.v64;*.z64|\
+Sega Genesis (*.smd, *.md)|*.smd;*.md|\
+Sega Master System (*.sms)|*.sms|\
+Super Nintendo (*.fig, *.sfc, *.smc)|*.fig;*.sfc;*.smc|\
+Turbo Grafx-16 (*.pce)|*.pce|\
+Virtual Boy (*.vb)|*.vb|\
+WonderSwan (*.ws, *.wsc)|*.ws;*.wsc|\
+X68000 (*.xdf)|*.xdf|\
+All files (*.*)|*.*"
+#--------------
+
 class TilemFrame(wx.MDIParentFrame):
-	def __init__(self):
+    def __init__(self):
 
-            wx.MDIParentFrame.__init__(self, None, -1, "Tilem", size=(600, 400))
+	wx.MDIParentFrame.__init__(self, None, -1, "Tilem", size=(640, 480))
 
-            self.winCount = 0
+	self.winCount = 0
 
-            menubar = wx.MenuBar()
-            menubar.Append(self.CreateFileMenu(), "File")
-            menubar.Append(self.CreateEditMenu(), "Edit")
-            menubar.Append(self.CreateViewMenu(), "View")
-            menubar.Append(self.CreateImageMenu(), "Image")
-            menubar.Append(self.CreateNavigateMenu(), "Navigate")
-            self.SetMenuBar(menubar)
-            self.CreateStatusBar()
-            menubar.Append(self.CreateHelpMenu(), "Help")
+	menubar = wx.MenuBar()
+	menubar.Append(self.CreateFileMenu(), "File")
+	menubar.Append(self.CreateEditMenu(), "Edit")
+	menubar.Append(self.CreateViewMenu(), "View")
+	menubar.Append(self.CreateImageMenu(), "Image")
+	menubar.Append(self.CreateNavigateMenu(), "Navigate")
+	self.SetMenuBar(menubar)
+	self.CreateStatusBar()
+	menubar.Append(self.CreateHelpMenu(), "Help")
 
-            self.tb1 = self.CreateTopToolBar()
-#            tb2 = wx.ToolBar(self, -1)
-#            tb2.Realize()
-#
-#            box = wx.BoxSizer(wx.VERTICAL)
-#            box.Add(tb1,0,wx.ALL | wx.ALIGN_LEFT | wx.EXPAND,4)
-#            box.Add(tb2,0,wx.ALL | wx.ALIGN_RIGHT ,4)
-#            box.Fit(self);
-#            self.SetAutoLayout(True)
-#            self.SetSizer(box)
+	self.tb1 = self.CreateTopToolBar()
 
-#            self.CreateSidePanel()
-            #self.Bind(wx.EVT_MENU, self.OnExit, id=ID_Exit)
+	self.toolPanel = ToolPanel(self)
 
-            self.toolPanel = ToolPanel(self)
+	self.SetClientSize(wx.Size(392, 216))
 
-            self.SetClientSize(wx.Size(392, 216))
-
-            wx.EVT_MAXIMIZE(self, self.onMaximize)
-            wx.EVT_ICONIZE(self, self.onIconize)
-            wx.EVT_CHILD_FOCUS(self, self.onActivate)
+	#self.Bind(wx.EVT_MENU, self.OnExit, id=ID_Exit)
+	wx.EVT_MAXIMIZE(self, self.onMaximize)
+	wx.EVT_ICONIZE(self, self.onIconize)
+	wx.EVT_CHILD_FOCUS(self, self.onActivate)
 
 
-#            wx.EVT_SHOW(self, self.onShow)
-#            wx.EVT_SIZE(self, self.onSize)
+	#wx.EVT_SHOW(self, self.onShow)
+	#wx.EVT_SIZE(self, self.onSize)
 
-#            self.toolBar1 = wx.ToolBar(id=-1,
-#                  name='toolBar1', parent=self, pos=wx.Point(34, 0),
-#                  size=wx.Size(26, 218),
-#                  style=wx.TB_VERTICAL | wx.TB_HORIZONTAL | wx.NO_BORDER)
-#
-#            self.toolBar2 = wx.ToolBar(id=-1,
-#                  name='toolBar2', parent=self, pos=wx.Point(2, 0), size=wx.Size(26,
-#                  218), style=wx.TB_VERTICAL | wx.NO_BORDER)
+	#self.toolBar1 = wx.ToolBar(id=-1,
+	      #name='toolBar1', parent=self, pos=wx.Point(34, 0),
+	      #size=wx.Size(26, 218),
+	      #style=wx.TB_VERTICAL | wx.TB_HORIZONTAL | wx.NO_BORDER)
 
-            if SHOW_BACKGROUND:
-                    self.bg_bmp = images.GridBG.GetBitmap()
-                    self.GetClientWindow().Bind(
-                            wx.EVT_ERASE_BACKGROUND, self.OnEraseBackground
-                    )
+	#self.toolBar2 = wx.ToolBar(id=-1,
+	      #name='toolBar2', parent=self, pos=wx.Point(2, 0), size=wx.Size(26,
+	      #218), style=wx.TB_VERTICAL | wx.NO_BORDER)
+
+	#Show background
+	self.bg_bmp = images.GridBG.GetBitmap()
+	self.GetClientWindow().Bind(wx.EVT_ERASE_BACKGROUND, self.OnEraseBackground)
 #####
 
-        def onMaximize(self, event):
-            '''
-            Handles the window's maximize event. This involves moving the tool
-            windows back to logical places.
-            '''
-            if(not self.IsMaximized()):
-                print 'maximize'
-            else:
-                print 'restore'
-            self.miniFrame.SetPosition(wx.Point(20,20))
-            event.Skip()
+    def onMaximize(self, event):
+	'''
+	Handles the window's maximize event. This involves moving the tool
+	windows back to logical places.
+	'''
+	if(not self.IsMaximized()):
+	    print 'maximize'
+	else:
+	    print 'restore'
+	self.miniFrame.SetPosition(wx.Point(20,20))
+	event.Skip()
 
-        def onIconize(self, event):
-            '''
-            Handles the windows minimize
-            '''
-            if(not self.IsIconized()):
-                print 'icon!'
-            else:
-                print 'no icon!'
-            event.Skip()
+    def onIconize(self, event):
+	'''
+	Handles the windows minimize
+	'''
+	if(not self.IsIconized()):
+	    print 'icon!'
+	else:
+	    print 'no icon!'
+	event.Skip()
 
-        def onShow(self, event):
-            print 'showing!'
-            event.Skip()
+    def onShow(self, event):
+	print 'showing!'
+	event.Skip()
 
-        def onActivate(self, event):
-            if(self.IsActive()):
-                self.toolPanel.SetTransparent(150)
-            else:
-                self.toolPanel.SetTransparent(255)
-            event.Skip()
+    def onActivate(self, event):
+	if(self.IsActive()):
+	    self.toolPanel.SetTransparent(150)
+	else:
+	    self.toolPanel.SetTransparent(255)
+	event.Skip()
 #####
 
-	def CreateTopToolBar(self):
-		toolbar = self.CreateToolBar()
+    def CreateTopToolBar(self):
+	toolbar = self.CreateToolBar()
+	
+	entries = [["New",  "icons/New-16.png",    self.OnNew],
+                   ["Open", "icons/Open-16.png",   self.OnOpen],
+                   ["Save", "icons/SaveAs-16.png", self.OnSaveAs],
+                   ["", "", ""],
+                   ["Cut",   "icons/Cut-16.png",   self.OnCut],
+                   ["Copy",  "icons/Copy-16.png",  self.OnCopy],
+                   ["Paste", "icons/Paste-16.png", self.OnPaste],
+                   ["", "", "", ""],
+                   ["Undo", "icons/Undo-16.png", self.OnUndo],
+                   ["Redo", "icons/Redo-16.png", self.OnRedo],
+                   ["", "", ""]]	
 		
-		entries = [["New",  "icons/New-16.png",    self.OnNew],
-		           ["Open", "icons/Open-16.png",   self.OnOpen],
-		           ["Save", "icons/SaveAs-16.png", self.OnSaveAs],
-		           ["", "", ""],
-		           ["Cut",   "icons/Cut-16.png",   self.OnCut],
-		           ["Copy",  "icons/Copy-16.png",  self.OnCopy],
-		           ["Paste", "icons/Paste-16.png", self.OnPaste],
-		           ["", "", "", ""],
-		           ["Undo", "icons/Undo-16.png", self.OnUndo],
-		           ["Redo", "icons/Redo-16.png", self.OnRedo],
-		           ["", "", ""]]	
-			
-		for item in entries:
-			
-			label = item[0]
-			icon = item[1]
-			handler = item[2]
-			
-			if not label:
-				toolbar.AddSeparator()
-			else:
-				bmp = wx.Bitmap(icon, wx.BITMAP_TYPE_PNG)
-				#AddSimpleTool(self, id, bitmap, shortHelpString='', longHelpString='', isToggle=0)								
-				tool = toolbar.AddSimpleTool(-1, bmp, label)
-				self.Bind(wx.EVT_MENU, handler, tool)
-				
-		toolbar.Realize()
+	for item in entries:
+		
+	    label = item[0]
+	    icon = item[1]
+	    handler = item[2]
+	    
+	    if not label:
+		toolbar.AddSeparator()
+	    else:
+		bmp = wx.Bitmap(icon, wx.BITMAP_TYPE_PNG)
+		#self, id, bitmap,
+                      #shortHelpString = '',
+                      #longHelpString = '',
+                      #isToggle = 0):
+		#AddSimpleTool(self, id, bitmap, shortHelpString='', longHelpString='', isToggle=0)			
+		#wx.ToolBar.AddSimpleTool
+		tool = toolbar.AddSimpleTool(id=-1, bitmap=bmp, shortHelpString=label)
+		self.Bind(wx.EVT_MENU, handler, tool)
+		    
+	toolbar.Realize()
 
-                return toolbar
+	return toolbar
 
-        def CreateSidePanel(self):
+    def CreateSidePanel(self):
 #            self.panel1 = wx.Panel(id=wx.NewId(), name='panel1',
 #                  parent=self, pos=wx.Point(0, 0), size=wx.Size(392, 216),
 #                  style=wx.TAB_TRAVERSAL)
@@ -456,338 +468,399 @@ class TilemFrame(wx.MDIParentFrame):
 
 
 
-	def CreateFileMenu(self):
-		"""
-		Creates the 'File' menu on the menu bar
-		"""
-		fileMenu = wx.Menu()
+    def CreateFileMenu(self):
+	"""
+	Creates the 'File' menu on the menu bar
+	"""
+	fileMenu = wx.Menu()
 
-		newMenuItem = wx.MenuItem(fileMenu, ID_NewMenuItem, "New...\tCtrl+N", "New...", wx.ITEM_NORMAL)
-		newMenuItem.SetBitmap(wx.Bitmap("icons/New-16.png", wx.BITMAP_TYPE_PNG))
-		fileMenu.AppendItem(newMenuItem)
-		self.Bind(wx.EVT_MENU, self.OnNew, newMenuItem)
+	newMenuItem = wx.MenuItem(fileMenu, ID_NewMenuItem, "New...\tCtrl+N", "New...", wx.ITEM_NORMAL)
+	newMenuItem.SetBitmap(wx.Bitmap("icons/New-16.png", wx.BITMAP_TYPE_PNG))
+	fileMenu.AppendItem(newMenuItem)
+	self.Bind(wx.EVT_MENU, self.OnNew, newMenuItem)
 
-		openMenuItem = wx.MenuItem(fileMenu, ID_OpenMenuItem, "Open...\tCtrl+O", "Open...", wx.ITEM_NORMAL)
-		openMenuItem.SetBitmap(wx.Bitmap("icons/Open-16.png", wx.BITMAP_TYPE_PNG))
-		fileMenu.AppendItem(openMenuItem)
-		self.Bind(wx.EVT_MENU, self.OnOpen, openMenuItem)
+	openMenuItem = wx.MenuItem(fileMenu, ID_OpenMenuItem, "Open...\tCtrl+O", "Open...", wx.ITEM_NORMAL)
+	openMenuItem.SetBitmap(wx.Bitmap("icons/Open-16.png", wx.BITMAP_TYPE_PNG))
+	fileMenu.AppendItem(openMenuItem)
+	self.Bind(wx.EVT_MENU, self.OnOpen, openMenuItem)
 
-		reOpenMenuItem = wx.MenuItem(fileMenu, ID_ReopenMenuItem, "Reopen", "", wx.ITEM_NORMAL)
-		fileMenu.AppendItem(reOpenMenuItem)
-		self.Bind(wx.EVT_MENU, self.OnReopen, reOpenMenuItem)
+	reOpenMenuItem = wx.MenuItem(fileMenu, ID_ReopenMenuItem, "Reopen", "", wx.ITEM_NORMAL)
+	fileMenu.AppendItem(reOpenMenuItem)
+	self.Bind(wx.EVT_MENU, self.OnReopen, reOpenMenuItem)
 
-		importImageMenuItem = wx.MenuItem(fileMenu, ID_ImportImageMenuItem, "Import Image", "", wx.ITEM_NORMAL)
-		fileMenu.AppendItem(importImageMenuItem)
-		self.Bind(wx.EVT_MENU, self.OnImportImage, importImageMenuItem)
+	importImageMenuItem = wx.MenuItem(fileMenu, ID_ImportImageMenuItem, "Import Image", "", wx.ITEM_NORMAL)
+	fileMenu.AppendItem(importImageMenuItem)
+	self.Bind(wx.EVT_MENU, self.OnImportImage, importImageMenuItem)
 
-		fileMenu.AppendSeparator()
+	fileMenu.AppendSeparator()
 
-		saveMenuItem = wx.MenuItem(fileMenu, ID_SaveMenuItem, "Save\tCtrl+S", "New...", wx.ITEM_NORMAL)
-		saveMenuItem.SetBitmap(wx.Bitmap("icons/Save-16.png", wx.BITMAP_TYPE_PNG))
-		fileMenu.AppendItem(saveMenuItem)		
-		self.Bind(wx.EVT_MENU, self.OnSave, saveMenuItem)
+	saveMenuItem = wx.MenuItem(fileMenu, ID_SaveMenuItem, "Save\tCtrl+S", "New...", wx.ITEM_NORMAL)
+	saveMenuItem.SetBitmap(wx.Bitmap("icons/Save-16.png", wx.BITMAP_TYPE_PNG))
+	fileMenu.AppendItem(saveMenuItem)		
+	self.Bind(wx.EVT_MENU, self.OnSave, saveMenuItem)
 
-		saveAsMenuItem = wx.MenuItem(fileMenu, ID_SaveAsMenuItem, "Save As...\tCtrl+Shift+S", "Save As", wx.ITEM_NORMAL)
-		saveAsMenuItem.SetBitmap(wx.Bitmap("icons/SaveAs-16.png", wx.BITMAP_TYPE_PNG))
-		fileMenu.AppendItem(saveAsMenuItem)
-		self.Bind(wx.EVT_MENU, self.OnSaveAs, saveAsMenuItem)
+	saveAsMenuItem = wx.MenuItem(fileMenu, ID_SaveAsMenuItem, "Save As...\tCtrl+Shift+S", "Save As", wx.ITEM_NORMAL)
+	saveAsMenuItem.SetBitmap(wx.Bitmap("icons/SaveAs-16.png", wx.BITMAP_TYPE_PNG))
+	fileMenu.AppendItem(saveAsMenuItem)
+	self.Bind(wx.EVT_MENU, self.OnSaveAs, saveAsMenuItem)
 
-		saveSelectionMenuItem = wx.MenuItem(fileMenu, ID_SaveSelectionMenuItem, "Save Selection", "", wx.ITEM_NORMAL)
-		fileMenu.AppendItem(saveSelectionMenuItem)
-		self.Bind(wx.EVT_MENU, self.OnSaveSelection, saveSelectionMenuItem)
+	saveSelectionMenuItem = wx.MenuItem(fileMenu, ID_SaveSelectionMenuItem, "Save Selection", "", wx.ITEM_NORMAL)
+	fileMenu.AppendItem(saveSelectionMenuItem)
+	self.Bind(wx.EVT_MENU, self.OnSaveSelection, saveSelectionMenuItem)
 
-		fileMenu.AppendSeparator()
+	fileMenu.AppendSeparator()
 
-		closeMenuItem = wx.MenuItem(fileMenu, ID_CloseMenuItem, "Close", "", wx.ITEM_NORMAL)
-		closeMenuItem.SetBitmap(wx.Bitmap("icons/Close-16.png", wx.BITMAP_TYPE_PNG))
-		fileMenu.AppendItem(closeMenuItem)
-		self.Bind(wx.EVT_MENU, self.OnClose, closeMenuItem)
+	closeMenuItem = wx.MenuItem(fileMenu, ID_CloseMenuItem, "Close", "", wx.ITEM_NORMAL)
+	closeMenuItem.SetBitmap(wx.Bitmap("icons/Close-16.png", wx.BITMAP_TYPE_PNG))
+	fileMenu.AppendItem(closeMenuItem)
+	self.Bind(wx.EVT_MENU, self.OnClose, closeMenuItem)
 
-		closeAllMenuItem = wx.MenuItem(fileMenu, ID_CloseAllMenuItem, "Close All", "", wx.ITEM_NORMAL)
-		fileMenu.AppendItem(closeAllMenuItem)
-		self.Bind(wx.EVT_MENU, self.OnCloseAll, closeAllMenuItem)
+	closeAllMenuItem = wx.MenuItem(fileMenu, ID_CloseAllMenuItem, "Close All", "", wx.ITEM_NORMAL)
+	fileMenu.AppendItem(closeAllMenuItem)
+	self.Bind(wx.EVT_MENU, self.OnCloseAll, closeAllMenuItem)
 
-		exitMenuItem = wx.MenuItem(fileMenu, ID_ExitMenuItem, "Exit\tCtrl+Q", "", wx.ITEM_NORMAL)
-		fileMenu.AppendItem(exitMenuItem)
-		self.Bind(wx.EVT_MENU, self.OnExit, exitMenuItem)
+	exitMenuItem = wx.MenuItem(fileMenu, ID_ExitMenuItem, "Exit\tCtrl+Q", "", wx.ITEM_NORMAL)
+	fileMenu.AppendItem(exitMenuItem)
+	self.Bind(wx.EVT_MENU, self.OnExit, exitMenuItem)
 
-		return fileMenu
+	return fileMenu
 
-	def CreateEditMenu(self):
-		"""
-		Creates the 'Edit' menu on the menu bar
-		"""		
-		editMenu = wx.Menu()
-		
-		undoMenuItem = wx.MenuItem(editMenu, ID_UndoMenuItem, "Undo", "", wx.ITEM_NORMAL)
-		undoMenuItem.SetBitmap(wx.Bitmap("icons/Undo-16.png", wx.BITMAP_TYPE_PNG))
-		editMenu.AppendItem(undoMenuItem)
-		self.Bind(wx.EVT_MENU, self.OnUndo, undoMenuItem)
+    def CreateEditMenu(self):
+	"""
+	Creates the 'Edit' menu on the menu bar
+	"""		
+	editMenu = wx.Menu()
+	
+	undoMenuItem = wx.MenuItem(editMenu, ID_UndoMenuItem, "Undo", "", wx.ITEM_NORMAL)
+	undoMenuItem.SetBitmap(wx.Bitmap("icons/Undo-16.png", wx.BITMAP_TYPE_PNG))
+	editMenu.AppendItem(undoMenuItem)
+	self.Bind(wx.EVT_MENU, self.OnUndo, undoMenuItem)
 
-		redoMenuItem = wx.MenuItem(editMenu, ID_RedoMenuItem, "Redo", "", wx.ITEM_NORMAL)
-		redoMenuItem.SetBitmap(wx.Bitmap("icons/Redo-16.png", wx.BITMAP_TYPE_PNG))
-		editMenu.AppendItem(redoMenuItem)
-		self.Bind(wx.EVT_MENU, self.OnRedo, redoMenuItem)
+	redoMenuItem = wx.MenuItem(editMenu, ID_RedoMenuItem, "Redo", "", wx.ITEM_NORMAL)
+	redoMenuItem.SetBitmap(wx.Bitmap("icons/Redo-16.png", wx.BITMAP_TYPE_PNG))
+	editMenu.AppendItem(redoMenuItem)
+	self.Bind(wx.EVT_MENU, self.OnRedo, redoMenuItem)
 
-		editMenu.AppendSeparator()
+	editMenu.AppendSeparator()
 
-		cutMenuItem = wx.MenuItem(editMenu, ID_CutMenuItem, "Cut", "", wx.ITEM_NORMAL)
-		cutMenuItem.SetBitmap(wx.Bitmap("icons/Cut-16.png", wx.BITMAP_TYPE_PNG))
-		editMenu.AppendItem(cutMenuItem)
-		self.Bind(wx.EVT_MENU, self.OnCut, cutMenuItem)
+	cutMenuItem = wx.MenuItem(editMenu, ID_CutMenuItem, "Cut", "", wx.ITEM_NORMAL)
+	cutMenuItem.SetBitmap(wx.Bitmap("icons/Cut-16.png", wx.BITMAP_TYPE_PNG))
+	editMenu.AppendItem(cutMenuItem)
+	self.Bind(wx.EVT_MENU, self.OnCut, cutMenuItem)
 
-		copyMenuItem = wx.MenuItem(editMenu, ID_CopyMenuItem, "Copy", "", wx.ITEM_NORMAL)
-		copyMenuItem.SetBitmap(wx.Bitmap("icons/Copy-16.png", wx.BITMAP_TYPE_PNG))
-		editMenu.AppendItem(copyMenuItem)
-		self.Bind(wx.EVT_MENU, self.OnCopy, copyMenuItem)
+	copyMenuItem = wx.MenuItem(editMenu, ID_CopyMenuItem, "Copy", "", wx.ITEM_NORMAL)
+	copyMenuItem.SetBitmap(wx.Bitmap("icons/Copy-16.png", wx.BITMAP_TYPE_PNG))
+	editMenu.AppendItem(copyMenuItem)
+	self.Bind(wx.EVT_MENU, self.OnCopy, copyMenuItem)
 
-		pasteMenuItem = wx.MenuItem(editMenu, ID_PasteMenuItem, "Paste", "", wx.ITEM_NORMAL)
-		pasteMenuItem.SetBitmap(wx.Bitmap("icons/Paste-16.png", wx.BITMAP_TYPE_PNG))
-		editMenu.AppendItem(pasteMenuItem)
-		self.Bind(wx.EVT_MENU, self.OnPaste, pasteMenuItem)
+	pasteMenuItem = wx.MenuItem(editMenu, ID_PasteMenuItem, "Paste", "", wx.ITEM_NORMAL)
+	pasteMenuItem.SetBitmap(wx.Bitmap("icons/Paste-16.png", wx.BITMAP_TYPE_PNG))
+	editMenu.AppendItem(pasteMenuItem)
+	self.Bind(wx.EVT_MENU, self.OnPaste, pasteMenuItem)
 
-		deleteMenuItem = wx.MenuItem(editMenu, ID_DeleteMenuItem, "Delete", "", wx.ITEM_NORMAL)
-		deleteMenuItem.SetBitmap(wx.Bitmap("icons/Delete-16.png", wx.BITMAP_TYPE_PNG))
-		editMenu.AppendItem(deleteMenuItem)
-		self.Bind(wx.EVT_MENU, self.OnDelete, deleteMenuItem)
-		
-		return editMenu
+	deleteMenuItem = wx.MenuItem(editMenu, ID_DeleteMenuItem, "Delete", "", wx.ITEM_NORMAL)
+	deleteMenuItem.SetBitmap(wx.Bitmap("icons/Delete-16.png", wx.BITMAP_TYPE_PNG))
+	editMenu.AppendItem(deleteMenuItem)
+	self.Bind(wx.EVT_MENU, self.OnDelete, deleteMenuItem)
+	
+	return editMenu
 
-	def CreateViewMenu(self):
-		"""
-		Creates the 'View' menu on the menu bar
-		"""		
-		viewMenu = wx.Menu()
+    def CreateViewMenu(self):
+	"""
+	Creates the 'View' menu on the menu bar
+	"""		
+	viewMenu = wx.Menu()
 
-		modeMenu = wx.Menu()
-		oneDimensionalMenuItem = wx.MenuItem(modeMenu, ID_1dModeMenuItem, "1 Dimensional", "", wx.ITEM_RADIO)
-		modeMenu.AppendItem(oneDimensionalMenuItem)
-		twoDimensionalMenuItem = wx.MenuItem(modeMenu, ID_2dModeMenuItem, "2 Dimensional", "", wx.ITEM_RADIO)
-		modeMenu.AppendItem(twoDimensionalMenuItem)
-		#self.Bind(wx.EVT_MENU, self., )
-		viewMenu.AppendMenu(-1, "Mode", modeMenu)
+	modeMenu = wx.Menu()
+	oneDimensionalMenuItem = wx.MenuItem(modeMenu, ID_1dModeMenuItem, "1 Dimensional", "", wx.ITEM_RADIO)
+	modeMenu.AppendItem(oneDimensionalMenuItem)
+	twoDimensionalMenuItem = wx.MenuItem(modeMenu, ID_2dModeMenuItem, "2 Dimensional", "", wx.ITEM_RADIO)
+	modeMenu.AppendItem(twoDimensionalMenuItem)
+	#self.Bind(wx.EVT_MENU, self., )
+	viewMenu.AppendMenu(-1, "Mode", modeMenu)
 
-		viewMenu.AppendSeparator()
+	viewMenu.AppendSeparator()
 
-		blockSizeMenu = wx.Menu()
-		fullCanvasMenuItem = wx.MenuItem(blockSizeMenu, ID_FullCanvasBlockSizeMenuItem, "Full Canvas", "", wx.ITEM_RADIO)
-		blockSizeMenu.AppendItem(fullCanvasMenuItem)
-		customCanvasMenuItem = wx.MenuItem(blockSizeMenu, ID_CustomBlockSizeMenuItem, "Custom", "", wx.ITEM_RADIO)
-		blockSizeMenu.AppendItem(customCanvasMenuItem)
-		#self.Bind(wx.EVT_MENU, self., )
-		viewMenu.AppendMenu(-1, "Block Size", blockSizeMenu)
+	blockSizeMenu = wx.Menu()
+	fullCanvasMenuItem = wx.MenuItem(blockSizeMenu, ID_FullCanvasBlockSizeMenuItem, "Full Canvas", "", wx.ITEM_RADIO)
+	blockSizeMenu.AppendItem(fullCanvasMenuItem)
+	customCanvasMenuItem = wx.MenuItem(blockSizeMenu, ID_CustomBlockSizeMenuItem, "Custom", "", wx.ITEM_RADIO)
+	blockSizeMenu.AppendItem(customCanvasMenuItem)
+	#self.Bind(wx.EVT_MENU, self., )
+	viewMenu.AppendMenu(-1, "Block Size", blockSizeMenu)
 
-		rowInterleavedBlocksMenuItem = wx.MenuItem(viewMenu, ID_RowInterleaveBlocksMenuItem, "Row-interleave Blocks", "", wx.ITEM_CHECK)
-		viewMenu.AppendItem(rowInterleavedBlocksMenuItem)
-		self.Bind(wx.EVT_MENU, self.OnRowInterleaveBlocks, rowInterleavedBlocksMenuItem)
+	rowInterleavedBlocksMenuItem = wx.MenuItem(viewMenu, ID_RowInterleaveBlocksMenuItem, "Row-interleave Blocks", "", wx.ITEM_CHECK)
+	viewMenu.AppendItem(rowInterleavedBlocksMenuItem)
+	self.Bind(wx.EVT_MENU, self.OnRowInterleaveBlocks, rowInterleavedBlocksMenuItem)
 
-		viewMenu.AppendSeparator()
+	viewMenu.AppendSeparator()
 
-		blockGridMenuItem = wx.MenuItem(modeMenu, ID_BlockGridMenuItem, "Block Grid", "", wx.ITEM_CHECK)
-		viewMenu.AppendItem(blockGridMenuItem)
-		self.Bind(wx.EVT_MENU, self.OnShowBlockGrid, blockGridMenuItem)
+	blockGridMenuItem = wx.MenuItem(modeMenu, ID_BlockGridMenuItem, "Block Grid", "", wx.ITEM_CHECK)
+	viewMenu.AppendItem(blockGridMenuItem)
+	self.Bind(wx.EVT_MENU, self.OnShowBlockGrid, blockGridMenuItem)
 
-		tileGridMenuItem = wx.MenuItem(modeMenu, ID_TileGridMenuItem, "Tile Grid", "", wx.ITEM_CHECK)
-		viewMenu.AppendItem(tileGridMenuItem)
-		self.Bind(wx.EVT_MENU, self.OnShowTileGrid, tileGridMenuItem)
+	tileGridMenuItem = wx.MenuItem(modeMenu, ID_TileGridMenuItem, "Tile Grid", "", wx.ITEM_CHECK)
+	viewMenu.AppendItem(tileGridMenuItem)
+	self.Bind(wx.EVT_MENU, self.OnShowTileGrid, tileGridMenuItem)
 
-		pixelGridMenuItem = wx.MenuItem(modeMenu, ID_PixelGridMenuItem, "Pixel Grid", "", wx.ITEM_CHECK)
-		viewMenu.AppendItem(pixelGridMenuItem)
-		self.Bind(wx.EVT_MENU, self.OnShowPixelGrid, pixelGridMenuItem)
+	pixelGridMenuItem = wx.MenuItem(modeMenu, ID_PixelGridMenuItem, "Pixel Grid", "", wx.ITEM_CHECK)
+	viewMenu.AppendItem(pixelGridMenuItem)
+	self.Bind(wx.EVT_MENU, self.OnShowPixelGrid, pixelGridMenuItem)
 
-		return viewMenu
+	return viewMenu
 
-	def CreateImageMenu(self):
-		"""
-		Creates the 'Image' menu on the menu bar
-		"""		
-		imageMenu = wx.Menu()
+    def CreateImageMenu(self):
+	"""
+	Creates the 'Image' menu on the menu bar
+	"""		
+	imageMenu = wx.Menu()
 
-		flipHorizontalMenuItem = wx.MenuItem(imageMenu, ID_FlipHorizontalMenuItem, "Flip Horizontal", "", wx.ITEM_NORMAL)
-		flipHorizontalMenuItem.SetBitmap(wx.Bitmap("icons/horizontal-flip-16.png", wx.BITMAP_TYPE_PNG))
-		imageMenu.AppendItem(flipHorizontalMenuItem)
-		self.Bind(wx.EVT_MENU, self.OnFlipHorizontal, flipHorizontalMenuItem)
+	flipHorizontalMenuItem = wx.MenuItem(imageMenu, ID_FlipHorizontalMenuItem, "Flip Horizontal", "", wx.ITEM_NORMAL)
+	flipHorizontalMenuItem.SetBitmap(wx.Bitmap("icons/horizontal-flip-16.png", wx.BITMAP_TYPE_PNG))
+	imageMenu.AppendItem(flipHorizontalMenuItem)
+	self.Bind(wx.EVT_MENU, self.OnFlipHorizontal, flipHorizontalMenuItem)
 
-		flipVerticalMenuItem = wx.MenuItem(imageMenu, ID_FlipVerticalMenuItem, "Flip Vertical", "", wx.ITEM_NORMAL)
-		flipVerticalMenuItem.SetBitmap(wx.Bitmap("icons/vertical-flip-16.png", wx.BITMAP_TYPE_PNG))
-		imageMenu.AppendItem(flipVerticalMenuItem)
-		self.Bind(wx.EVT_MENU, self.OnFlipVertical, flipVerticalMenuItem)
+	flipVerticalMenuItem = wx.MenuItem(imageMenu, ID_FlipVerticalMenuItem, "Flip Vertical", "", wx.ITEM_NORMAL)
+	flipVerticalMenuItem.SetBitmap(wx.Bitmap("icons/vertical-flip-16.png", wx.BITMAP_TYPE_PNG))
+	imageMenu.AppendItem(flipVerticalMenuItem)
+	self.Bind(wx.EVT_MENU, self.OnFlipVertical, flipVerticalMenuItem)
 
-		imageMenu.AppendSeparator()
+	imageMenu.AppendSeparator()
 
-		rotateRightMenuItem = wx.MenuItem(imageMenu, ID_RotateClockwiseMenuItem, "Rotate 90° Clockwise", "", wx.ITEM_NORMAL)
-		rotateRightMenuItem.SetBitmap(wx.Bitmap("icons/rotate-right-16.png", wx.BITMAP_TYPE_PNG))
-		imageMenu.AppendItem(rotateRightMenuItem)
-		self.Bind(wx.EVT_MENU, self.OnRotateClockwise, rotateRightMenuItem)
+	rotateRightMenuItem = wx.MenuItem(imageMenu, ID_RotateClockwiseMenuItem, "Rotate 90° Clockwise", "", wx.ITEM_NORMAL)
+	rotateRightMenuItem.SetBitmap(wx.Bitmap("icons/rotate-right-16.png", wx.BITMAP_TYPE_PNG))
+	imageMenu.AppendItem(rotateRightMenuItem)
+	self.Bind(wx.EVT_MENU, self.OnRotateClockwise, rotateRightMenuItem)
 
-		rotateLeftMenuItem = wx.MenuItem(imageMenu, ID_RotateCounterClockwiseMenuItem, "Rotate 90° Counter-Clockwise", "", wx.ITEM_NORMAL)
-		rotateLeftMenuItem.SetBitmap(wx.Bitmap("icons/rotate-left-16.png", wx.BITMAP_TYPE_PNG))
-		imageMenu.AppendItem(rotateLeftMenuItem)
-		self.Bind(wx.EVT_MENU, self.OnRotateCounterClockwise, rotateLeftMenuItem)
+	rotateLeftMenuItem = wx.MenuItem(imageMenu, ID_RotateCounterClockwiseMenuItem, "Rotate 90° Counter-Clockwise", "", wx.ITEM_NORMAL)
+	rotateLeftMenuItem.SetBitmap(wx.Bitmap("icons/rotate-left-16.png", wx.BITMAP_TYPE_PNG))
+	imageMenu.AppendItem(rotateLeftMenuItem)
+	self.Bind(wx.EVT_MENU, self.OnRotateCounterClockwise, rotateLeftMenuItem)
 
-		imageMenu.AppendSeparator()
+	imageMenu.AppendSeparator()
 
-		canvasSizeMenuItem = wx.MenuItem(imageMenu, ID_CanvasSizeMenuItem, "Canvas Size...", "", wx.ITEM_NORMAL)
-		imageMenu.AppendItem(canvasSizeMenuItem)
-		self.Bind(wx.EVT_MENU, self.OnCanvasSize, canvasSizeMenuItem)
+	canvasSizeMenuItem = wx.MenuItem(imageMenu, ID_CanvasSizeMenuItem, "Canvas Size...", "", wx.ITEM_NORMAL)
+	imageMenu.AppendItem(canvasSizeMenuItem)
+	self.Bind(wx.EVT_MENU, self.OnCanvasSize, canvasSizeMenuItem)
 
-		selectionSizeMenuItem = wx.MenuItem(imageMenu, ID_SelectionSizeMenuItem, "Selection Size...", "", wx.ITEM_NORMAL)
-		imageMenu.AppendItem(selectionSizeMenuItem)
-		self.Bind(wx.EVT_MENU, self.OnSelectionSize, selectionSizeMenuItem)
+	selectionSizeMenuItem = wx.MenuItem(imageMenu, ID_SelectionSizeMenuItem, "Selection Size...", "", wx.ITEM_NORMAL)
+	imageMenu.AppendItem(selectionSizeMenuItem)
+	self.Bind(wx.EVT_MENU, self.OnSelectionSize, selectionSizeMenuItem)
 
-		return imageMenu
+	return imageMenu
 
-	def CreateNavigateMenu(self):
-		"""
-		Creates the 'Navigate' menu on the menu bar
-		"""		
-		navigateMenu = wx.Menu()
+    def CreateNavigateMenu(self):
+	"""
+	Creates the 'Navigate' menu on the menu bar
+	"""		
+	navigateMenu = wx.Menu()
 
-		gotoMenuItem = wx.MenuItem(navigateMenu, ID_GotoAddressMenuItem, "Goto Address\tCtrl+G", "", wx.ITEM_NORMAL)
-		navigateMenu.AppendItem(gotoMenuItem)
-		self.Bind(wx.EVT_MENU, self.OnGoto, gotoMenuItem)
+	gotoMenuItem = wx.MenuItem(navigateMenu, ID_GotoAddressMenuItem, "Goto Address\tCtrl+G", "", wx.ITEM_NORMAL)
+	navigateMenu.AppendItem(gotoMenuItem)
+	self.Bind(wx.EVT_MENU, self.OnGoto, gotoMenuItem)
 
-		navigateMenu.AppendSeparator()
+	navigateMenu.AppendSeparator()
 
-		addBookmarkMenuItem = wx.MenuItem(navigateMenu, ID_AddBookMarkMenuItem, "Add Bookmark", "", wx.ITEM_NORMAL)
-		navigateMenu.AppendItem(addBookmarkMenuItem)
-		self.Bind(wx.EVT_MENU, self.OnAddBookmark, addBookmarkMenuItem)
+	addBookmarkMenuItem = wx.MenuItem(navigateMenu, ID_AddBookMarkMenuItem, "Add Bookmark", "", wx.ITEM_NORMAL)
+	navigateMenu.AppendItem(addBookmarkMenuItem)
+	self.Bind(wx.EVT_MENU, self.OnAddBookmark, addBookmarkMenuItem)
 
-		organizeBookmarksMenuItem = wx.MenuItem(navigateMenu, ID_OrganizeBookmarksMenuItem, "Organize Bookmarks", "", wx.ITEM_NORMAL)
-		navigateMenu.AppendItem(organizeBookmarksMenuItem)
-		self.Bind(wx.EVT_MENU, self.OnOrganizeBookmarks, organizeBookmarksMenuItem)
+	organizeBookmarksMenuItem = wx.MenuItem(navigateMenu, ID_OrganizeBookmarksMenuItem, "Organize Bookmarks", "", wx.ITEM_NORMAL)
+	navigateMenu.AppendItem(organizeBookmarksMenuItem)
+	self.Bind(wx.EVT_MENU, self.OnOrganizeBookmarks, organizeBookmarksMenuItem)
 
-		return navigateMenu
+	return navigateMenu
 
-	def CreateHelpMenu(self):
-		"""
-		Creates the 'Help' menu on the menu bar
-		"""		
-		helpMenu = wx.Menu()
+    def CreateHelpMenu(self):
+	"""
+	Creates the 'Help' menu on the menu bar
+	"""		
+	helpMenu = wx.Menu()
 
-		helpTopicsItem = wx.MenuItem(helpMenu, ID_HelpTopicsMenuItem, "Help Topics\tF1", "", wx.ITEM_NORMAL)
-		helpMenu.AppendItem(helpTopicsItem)
-		self.Bind(wx.EVT_MENU, self.OnHelpTopics, helpTopicsItem)
+	helpTopicsItem = wx.MenuItem(helpMenu, ID_HelpTopicsMenuItem, "Help Topics\tF1", "", wx.ITEM_NORMAL)
+	helpMenu.AppendItem(helpTopicsItem)
+	self.Bind(wx.EVT_MENU, self.OnHelpTopics, helpTopicsItem)
 
-		aboutTopicsItem = wx.MenuItem(helpMenu, ID_AboutMenuItem, "About Tilem", "", wx.ITEM_NORMAL)
-		helpMenu.AppendItem(aboutTopicsItem)
-		self.Bind(wx.EVT_MENU, self.OnAbout, aboutTopicsItem)
+	aboutTopicsItem = wx.MenuItem(helpMenu, ID_AboutMenuItem, "About Tilem", "", wx.ITEM_NORMAL)
+	helpMenu.AppendItem(aboutTopicsItem)
+	self.Bind(wx.EVT_MENU, self.OnAbout, aboutTopicsItem)
 
-		return helpMenu
+	return helpMenu
 
 #####
 # Event handlers
 #####
 
 #File Menu Events
-	def OnNew(self, evt):
-		win = wx.MDIChildFrame(self, -1, "File: %d" % self.winCount)
-		canvas = ScrolledWindow.MyCanvas(win)
-		win.Show(True)
-		self.winCount = self.winCount + 1
+    def OnNew(self, evt):
+	win = canvas.CanvasFrame(self)
+	#win = ScrolledWindow
+	#win = wx.MDIChildFrame(self, -1, "File: %d" % self.winCount)
+	#canvas = ScrolledWindow.MyCanvas(win)
+	#win.Show(True)
+	self.winCount = self.winCount + 1
 
-	def OnOpen(self, evt):
-		print "OnOpen"
+    def OnOpen(self, evt):
+	    openDialog = wx.FileDialog(self, "Choose a file", "", "", romFileTypes, wx.OPEN, )
+	    if openDialog.ShowModal() == wx.ID_OK:
+		try:
+		    selectedFile = open(name=openDialog.GetPath(), mode='rb')
+		    win = canvas.CanvasFrame(self, romFile=selectedFile)
+		    #win = wx.MDIChildFrame(self, -1, "File: %d" % self.winCount)
+		    
+		    #tb = wx.ToolBar(id=-1,
+		                    #name='toolBar1', parent=win, pos=wx.Point(0, 0),
+		                    #size=wx.Size(455, 28), style=wx.TB_DOCKABLE | wx.TB_HORIZONTAL | wx.NO_BORDER)		    
+		    #win.SetToolBar(tb)
+		    #tb.Realize()
 
-	def OnReopen(self, evt):
-		print "OnReopen"
+		    #self.Bind(wx.EVT_SIZING, self.OnTest, id=-1)		    
+		    
+		    #toolbar.AddSeparator()
+		    
+		#else:
+		    #bmp = wx.Bitmap(icon, wx.BITMAP_TYPE_PNG)
+		    #self, id, bitmap,
+			  #shortHelpString = '',
+			  #longHelpString = '',
+			  #isToggle = 0):
+		    #AddSimpleTool(self, id, bitmap, shortHelpString='', longHelpString='', isToggle=0)			
+		    #wx.ToolBar.AddSimpleTool
+		    #tool = toolbar.AddSimpleTool(id=-1, bitmap=bmp, shortHelpString=label)
+		    #self.Bind(wx.EVT_MENU, handler, tool)
+		    
+		    #self.comboBox1 = wx.ComboBox(choices=[],
+				  #id=wxID_MDICHILDFRAME1COMBOBOX1, name='comboBox1',
+				  #parent=self.toolBar1, pos=wx.Point(8, 0), size=wx.Size(130, 21),
+				  #style=0, value='comboBox1')
+		    #self.comboBox1.SetLabel('comboBox1')
+		    
+		    #self.staticBitmap1 = wx.StaticBitmap(bitmap=wx.NullBitmap,
+				  #id=wxID_MDICHILDFRAME1STATICBITMAP1, name='staticBitmap1',
+				  #parent=self.toolBar1, pos=wx.Point(144, 0), size=wx.Size(16, 16),
+				  #style=0)
+		    
+		    #self.staticBitmap2 = wx.StaticBitmap(bitmap=wx.NullBitmap,
+				  #id=wxID_MDICHILDFRAME1STATICBITMAP2, name='staticBitmap2',
+				  #parent=self.toolBar1, pos=wx.Point(168, 0), size=wx.Size(16, 16),
+				  #style=0)
+		    
+		    #self.comboBox2 = wx.ComboBox(choices=[],
+				  #id=wxID_MDICHILDFRAME1COMBOBOX2, name='comboBox2',
+				  #parent=self.toolBar1, pos=wx.Point(168, 0), size=wx.Size(130, 21),
+				  #style=0, value='comboBox2')
+		    
+		    #canvas = ScrolledWindow.MyCanvas(win, openFile=selectedFile)
+		    win.Show(True)
+		    self.winCount = self.winCount + 1
+		    
+		#finally:
+		    #selectedFile.close
+		    
+		except IOError:
+		    pass
+		
+	    openDialog.Destroy()	    
+    
+    def OnReopen(self, evt):
+	print "OnReopen"
 
-	def OnImportImage(self, evt):
-		print "OnImportImage"
+    def OnImportImage(self, evt):
+	print "OnImportImage"
 
-	def OnSave(self, evt):
-		print "OnSave"
+    def OnSave(self, evt):
+	print "OnSave"
 
-	def OnSaveAs(self, evt):
-		print "OnSaveAs"
+    def OnSaveAs(self, evt):
+	print "OnSaveAs"
 
-	def OnSaveSelection(self, evt):
-		print "OnSaveSelection"
+    def OnSaveSelection(self, evt):
+	print "OnSaveSelection"
 
-	def OnClose(self, evt):
-		print "OnClose"
+    def OnClose(self, evt):
+	print "OnClose"
 
-	def OnCloseAll(self, evt):
-		print "OnCloseAll"
+    def OnCloseAll(self, evt):
+	print "OnCloseAll"
 
-	def OnExit(self, evt):
-		self.Close(True)
+    def OnExit(self, evt):
+	self.Close(True)
 
 #Edit Menu Events
-	def OnUndo(self, evt):
-		print "OnUndo"
+    def OnUndo(self, evt):
+	print "OnUndo"
 
-	def OnRedo(self, evt):
-		print "OnRedo"
+    def OnRedo(self, evt):
+	print "OnRedo"
 
-	def OnCut(self, evt):
-		print "OnCut"
+    def OnCut(self, evt):
+	print "OnCut"
 
-	def OnCopy(self, evt):
-		print "OnCopy"
+    def OnCopy(self, evt):
+	print "OnCopy"
 
-	def OnPaste(self, evt):
-		print "OnPaste"
+    def OnPaste(self, evt):
+	print "OnPaste"
 
-	def OnDelete(self, evt):
-		print "OnDelete"
+    def OnDelete(self, evt):
+	print "OnDelete"
 
 #View Menu Events
-	def OnMode(self, evt):
-		print "OnMode"
+    def OnMode(self, evt):
+	print "OnMode"
 
-	def OnBlockSize(self, evt):
-		print "OnBlockSize"
+    def OnBlockSize(self, evt):
+	print "OnBlockSize"
 
-	def OnRowInterleaveBlocks(self, evt):
-		print "OnRowInterleaveBlocks"
+    def OnRowInterleaveBlocks(self, evt):
+	print "OnRowInterleaveBlocks"
 
-	def OnShowBlockGrid(self, evt):
-		print "OnShowBlockGrid"
+    def OnShowBlockGrid(self, evt):
+	print "OnShowBlockGrid"
 
-	def OnShowTileGrid(self, evt):
-		print "OnShowTileGrid"
+    def OnShowTileGrid(self, evt):
+	print "OnShowTileGrid"
 
-	def OnShowPixelGrid(self, evt):
-		print "OnShowPixelGrid"
+    def OnShowPixelGrid(self, evt):
+	print "OnShowPixelGrid"
 
-	def OnShowColorPalette(self, evt):
-		print "OnShowColorPalette"
+    def OnShowColorPalette(self, evt):
+	print "OnShowColorPalette"
 
-	def OnShowStatusbar(self, evt):
-		print "OnShowStatusbar"
+    def OnShowStatusbar(self, evt):
+	print "OnShowStatusbar"
 
-	def OnShowToolbar(self, evt):
-		print "OnShowToolbar"
+    def OnShowToolbar(self, evt):
+	print "OnShowToolbar"
 
 #Image
-	def OnFlipHorizontal(self, evt):
-		print "OnFlipHorizontal"
+    def OnFlipHorizontal(self, evt):
+	print "OnFlipHorizontal"
 
-	def OnFlipVertical(self, evt):
-		print "OnFlipVertical"
+    def OnFlipVertical(self, evt):
+	print "OnFlipVertical"
 
-	def OnRotateClockwise(self, evt):
-		print "OnRotateClockwise"
+    def OnRotateClockwise(self, evt):
+	print "OnRotateClockwise"
 
-	def OnRotateCounterClockwise(self, evt):
-		print "OnRotateCounterClockwise"
+    def OnRotateCounterClockwise(self, evt):
+	print "OnRotateCounterClockwise"
 
-	def OnCanvasSize(self, evt):
-		print "OnCanvasSize"
+    def OnCanvasSize(self, evt):
+	print "OnCanvasSize"
 
-	def OnSelectionSize(self, evt):
-		print "OnSelectionSize"
+    def OnSelectionSize(self, evt):
+	print "OnSelectionSize"
 
 #Navigate
-	def OnGoto(self, evt):
-		dialog = GotoDialog(self)
+    def OnGoto(self, evt):
+	dialog = GotoDialog(self)
 
-		if dialog.ShowModal() == wx.ID_OK:
-                    print 'HI!'
-                else:
-                    print 'bye'
-                    dialog.Destroy()
+	if dialog.ShowModal() == wx.ID_OK:
+	    print 'HI!'
+	else:
+	    print 'bye'
+	    dialog.Destroy()
 #		   selected = dialog.GetSelections()
 #		   for selection in selected:
 #			  print str ( selection ) + ': ' + choices [ selection ]
@@ -797,54 +870,54 @@ class TilemFrame(wx.MDIParentFrame):
 #                    print 'bye'
 #                    dialog.Destroy()
 
-	def OnAddBookmark(self, evt):
-		print "OnAddBookmark"
+    def OnAddBookmark(self, evt):
+	print "OnAddBookmark"
 
-	def OnOrganizeBookmarks(self, evt):
-		print "OnOrganizeBookmarks"
+    def OnOrganizeBookmarks(self, evt):
+	print "OnOrganizeBookmarks"
 
-	def OnHelpTopics(self, evt):
-		print "OnHelpTopics"
+    def OnHelpTopics(self, evt):
+	print "OnHelpTopics"
 
-	def OnAbout(self, evt):
-		print "OnAbout"
+    def OnAbout(self, evt):
+	print "OnAbout"
 #Help
 
 # Others
-	def OnEraseBackground(self, evt):
-		dc = evt.GetDC()
-		evt.GetId()
-		if not dc:
-			dc = wx.ClientDC(self.GetClientWindow())
+    def OnEraseBackground(self, evt):
+	dc = evt.GetDC()
+	evt.GetId()
+	if not dc:
+		dc = wx.ClientDC(self.GetClientWindow())
 
-		# tile the background bitmap
-		sz = self.GetClientSize()
-		w = self.bg_bmp.GetWidth()
-		h = self.bg_bmp.GetHeight()
-		x = 0
+	# tile the background bitmap
+	sz = self.GetClientSize()
+	w = self.bg_bmp.GetWidth()
+	h = self.bg_bmp.GetHeight()
+	x = 0
 
-		while x < sz.width:
-			y = 0
+	while x < sz.width:
+	    y = 0
 
-			while y < sz.height:
-				dc.DrawBitmap(self.bg_bmp, x, y)
-				y = y + h
+	    while y < sz.height:
+		dc.DrawBitmap(self.bg_bmp, x, y)
+		y = y + h
 
-			x = x + w
+	    x = x + w
 
 
 #----------------------------------------------------------------------
 
 if __name__ == '__main__':
-	class MyApp(wx.App):
-		def OnInit(self):
-			wx.InitAllImageHandlers()
-			frame = TilemFrame()
-			frame.Show(True)
-			self.SetTopWindow(frame)
-			return True
+    class MyApp(wx.App):
+	def OnInit(self):
+	    wx.InitAllImageHandlers()
+	    frame = TilemFrame()
+	    frame.Show(True)
+	    self.SetTopWindow(frame)
+	    return True
 
 
-	app = MyApp(False)
-	app.MainLoop()
+    app = MyApp(False)
+    app.MainLoop()
 
