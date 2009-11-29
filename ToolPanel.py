@@ -14,16 +14,20 @@ import wx
  wxID_SidePanelSIDEPANEL,
 ] = [wx.NewId() for _init_ctrls in range(22)]
 
+FRAME_SIZE = wx.Size(72, 320)
+
 class ToolPanel(wx.MiniFrame):
 	def __init__(self, prnt):
 		wx.MiniFrame.__init__(self, id=-1, name='', parent=prnt,
-		                      pos=wx.Point(512, 312), size=wx.Size(72, 320),
+		                      pos=wx.Point(512, 312), size=FRAME_SIZE,
 		                      style=wx.FRAME_TOOL_WINDOW | wx.CLOSE_BOX | wx.DEFAULT_FRAME_STYLE,
 		                      title='Tools')
 
 		self.pane = pane = wx.Panel(id=-1, name='panel1', parent=self, pos=wx.Point(0, 0),
-		                            size=wx.Size(72, 320), style=wx.TAB_TRAVERSAL)
+		                            size=FRAME_SIZE, style=wx.TAB_TRAVERSAL)
 	
+		self.SetSizeHintsSz(FRAME_SIZE, FRAME_SIZE)		
+		
 		self.bitmapButton1 = wx.BitmapButton(
 		    bitmap=wx.Bitmap(u'C:/tilemPy/icons/select-16.png', wx.BITMAP_TYPE_PNG),
 		    id=ID_Selection, 

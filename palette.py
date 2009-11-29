@@ -71,6 +71,8 @@ egaPalette = [
     '0x555500', '0x5555AA', '0x55FF00', '0x55FFAA', '0xFF5500', '0xFF55AA', '0xFFFF00', '0xFFFFAA',
     '0x555555', '0x5555FF', '0x55FF55', '0x55FFFF', '0xFF5555', '0xFF55FF', '0xFFFF55', '0xFFFFFF']
 
+FRAME_SIZE = wx.Size(275, 325)
+
 # -----------------------------------------------------------------------------
 
 class PaletteFrame(wx.MiniFrame):
@@ -79,19 +81,37 @@ class PaletteFrame(wx.MiniFrame):
     """
     def __init__(self, prnt):
         wx.MiniFrame.__init__(self, prnt, id=ID_Self, title='Color Palette', 
-                              size=wx.Size(275, 325), style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.FRAME_NO_TASKBAR )
+                              size=FRAME_SIZE, style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.FRAME_NO_TASKBAR )
 
         self.palettes = {"default":defaultPalette, "nes":nesPalette, "cga":cgaPalette, "ega":egaPalette}
+	self.bppSelections = bppSelections = ['4bpp CGA', '6bpp NES', '8bpp EGA', '9bpp RGB(333)', '15bpp RGB(555)', 
+	                           '16bpp RGB(565)', '24bpp RGB(888)', '32bpp ARGB(8888)']
+        
         # setup menubar
         menubar = wx.MenuBar()
         menubar.Append(self.CreatePaletteMenu(), "Palette")
         self.SetMenuBar(menubar)
 
         book = ColoringBook(self)
+        
+	toolBar = wx.ToolBar(id=-1, name='toolBar1', parent=self, pos=wx.DefaultPosition,
+	                     size=wx.Size(275, 28), style=wx.TB_HORIZONTAL | wx.NO_BORDER | wx.TB_BOTTOM )		    
+
+	toolBar.colorEncodings = wx.ComboBox(choices=bppSelections,
+	    id=-1, name='zoom', parent=toolBar, pos=wx.Point(2, 1), size=wx.Size(120, 20),
+	    style=wx.CB_READONLY, value='4bpp CGA')
+	
+	#change hard coded value
+	toolBar.NumColors = wx.TextCtrl(parent = toolBar, id=-1, value='512', size=wx.Size(50, 20), style=0,
+	                                pos=wx.Point(140, 1))
+	toolBar.NumColors.SetMaxLength(5)
+        toolBar.NumColors.SetInsertionPoint(0)
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(book, 1, wx.EXPAND)
+	sizer.Add(toolBar, 0, wx.EXPAND)
         self.SetSizer(sizer)
+        #self.SetSizeHintsSz(FRAME_SIZE, FRAME_SIZE)
         self.Show(True)
 
     def CreatePaletteMenu(self):

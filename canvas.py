@@ -2,7 +2,7 @@
 import  wx
 import  images
 
-from bitbuffer import BitBuffer
+from utils.bitbuffer import BitBuffer
 
 from utils.enthoughtSizer import FlowSizer
 
