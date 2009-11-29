@@ -4,7 +4,9 @@ import  images
 
 from bitbuffer import BitBuffer
 
-BUFFERED = 1
+from utils.enthoughtSizer import FlowSizer
+
+BUFFERED = True
 
 zoomSelections = ['50%', '75%', '100%', '125%', '150%', '200%', '400%', '800%']
 
@@ -45,7 +47,7 @@ class CanvasFrame(wx.MDIChildFrame):
 		toolBar.decoderSelect = wx.ComboBox(choices=decoderSelections,
 		        id=-1, name='decoder',
 		        parent=toolBar, pos=wx.Point(90, 1), size=wx.Size(180, 20),
-		        style=wx.CB_READONLY)
+		        style=wx.CB_READONLY, value=decoderSelections[0])
 
 		toolBar.Realize()		
 		toolBar.Raise()
@@ -56,12 +58,6 @@ class CanvasFrame(wx.MDIChildFrame):
 		vbox.Add(toolBar, 0, wx.EXPAND)
 	
 		self.SetSizer(vbox)
-		self.Show(True)
-
-		#self.SetToolBar(toolBar)
-		
-
-		
 		self.Show(True)	
 	
 
@@ -173,10 +169,10 @@ class ScrolledCanvas(wx.ScrolledWindow):
 		dc.SetTextForeground(wx.Colour(0, 0xFF, 0x80))
 		dc.DrawText("a bitmap", 200, 85)
 
-##		 dc.SetFont(wx.Font(14, wx.SWISS, wx.NORMAL, wx.NORMAL))
-##		 dc.SetTextForeground("BLACK")
-##		 dc.DrawText("TEST this STRING", 10, 200)
-##		 print dc.GetFullTextExtent("TEST this STRING")
+#		 dc.SetFont(wx.Font(14, wx.SWISS, wx.NORMAL, wx.NORMAL))
+#		 dc.SetTextForeground("BLACK")
+#		 dc.DrawText("TEST this STRING", 10, 200)
+#		 print dc.GetFullTextExtent("TEST this STRING")
 
 		font = wx.Font(20, wx.SWISS, wx.NORMAL, wx.NORMAL)
 		dc.SetFont(font)
@@ -288,25 +284,25 @@ class ScrolledCanvas(wx.ScrolledWindow):
 			self.drawing = False
 
 
-## This is an example of what to do for the EVT_MOUSEWHEEL event,
-## but since wx.ScrolledWindow does this already it's not
-## necessary to do it ourselves. You would need to add an event table 
-## entry to __init__() to direct wheelmouse events to this handler.
+# This is an example of what to do for the EVT_MOUSEWHEEL event,
+# but since wx.ScrolledWindow does this already it's not
+# necessary to do it ourselves. You would need to add an event table 
+# entry to __init__() to direct wheelmouse events to this handler.
 
-##	 wheelScroll = 0
-##	 def OnWheel(self, evt):
-##		 delta = evt.GetWheelDelta()
-##		 rot = evt.GetWheelRotation()
-##		 linesPer = evt.GetLinesPerAction()
-##		 print delta, rot, linesPer
-##		 ws = self.wheelScroll
-##		 ws = ws + rot
-##		 lines = ws / delta
-##		 ws = ws - lines * delta
-##		 self.wheelScroll = ws
-##		 if lines != 0:
-##			 lines = lines * linesPer
-##			 vsx, vsy = self.GetViewStart()
-##			 scrollTo = vsy - lines
-##			 self.Scroll(-1, scrollTo)
+#	 wheelScroll = 0
+#	 def OnWheel(self, evt):
+#		 delta = evt.GetWheelDelta()
+#		 rot = evt.GetWheelRotation()
+#		 linesPer = evt.GetLinesPerAction()
+#		 print delta, rot, linesPer
+#		 ws = self.wheelScroll
+#		 ws = ws + rot
+#		 lines = ws / delta
+#		 ws = ws - lines * delta
+#		 self.wheelScroll = ws
+#		 if lines != 0:
+#			 lines = lines * linesPer
+#			 vsx, vsy = self.GetViewStart()
+#			 scrollTo = vsy - lines
+#			 self.Scroll(-1, scrollTo)
 

@@ -4,7 +4,7 @@
 __author__="Matt Beisser"
 __date__ ="$Oct 16, 2009 6:33:40 PM$"
 
-from gotoAddress import GotoDialog
+from dialogs.gotoAddressDialog import GotoDialog
 from ToolPanel import ToolPanel
 
 import  wx
@@ -12,6 +12,8 @@ import  wx
 #MDI child windows...
 import canvas
 import images
+
+import palette
 
 SHOW_BACKGROUND = 1
 
@@ -311,7 +313,6 @@ ID_AboutMenuItem = wx.NewId()
 ID_SidePanel = wx.NewId()
 #----------------------------------------------------------------------
 
-
 romFileTypes = "All supported formats|*.chr;*.fds;*.fig;*.gb;*.gba;*.gbc;*.gg;*.md;*.n64;*.nes;\
 *.ngp;*.ngpc;*.pce;*.sfc;*.sgb;*.smc;*.smd;*.sms;*.v64;*.vb;*.ws;*.wsc;*.xdf;*.z64|\
 Famicon (*.fds)|*.fds|\
@@ -337,7 +338,11 @@ class TilemFrame(wx.MDIParentFrame):
 	wx.MDIParentFrame.__init__(self, None, -1, "Tilem", size=(640, 480))
 
 	self.winCount = 0
-
+	self.paletteFrame = palette.PaletteFrame(self)
+	self.toolPanel = ToolPanel(self)
+	self.tb1 = self.CreateTopToolBar()	
+	
+	# Setup our menubar
 	menubar = wx.MenuBar()
 	menubar.Append(self.CreateFileMenu(), "File")
 	menubar.Append(self.CreateEditMenu(), "Edit")
@@ -345,72 +350,17 @@ class TilemFrame(wx.MDIParentFrame):
 	menubar.Append(self.CreateImageMenu(), "Image")
 	menubar.Append(self.CreateNavigateMenu(), "Navigate")
 	self.SetMenuBar(menubar)
-	self.CreateStatusBar()
 	menubar.Append(self.CreateHelpMenu(), "Help")
 
-	self.tb1 = self.CreateTopToolBar()
-
-	self.toolPanel = ToolPanel(self)
-
-	self.SetClientSize(wx.Size(392, 216))
+	self.SetClientSize(wx.Size(400, 400))
 
 	#self.Bind(wx.EVT_MENU, self.OnExit, id=ID_Exit)
-	wx.EVT_MAXIMIZE(self, self.onMaximize)
-	wx.EVT_ICONIZE(self, self.onIconize)
-	wx.EVT_CHILD_FOCUS(self, self.onActivate)
-
-
-	#wx.EVT_SHOW(self, self.onShow)
-	#wx.EVT_SIZE(self, self.onSize)
-
-	#self.toolBar1 = wx.ToolBar(id=-1,
-	      #name='toolBar1', parent=self, pos=wx.Point(34, 0),
-	      #size=wx.Size(26, 218),
-	      #style=wx.TB_VERTICAL | wx.TB_HORIZONTAL | wx.NO_BORDER)
-
-	#self.toolBar2 = wx.ToolBar(id=-1,
-	      #name='toolBar2', parent=self, pos=wx.Point(2, 0), size=wx.Size(26,
-	      #218), style=wx.TB_VERTICAL | wx.NO_BORDER)
 
 	#Show background
 	self.bg_bmp = images.GridBG.GetBitmap()
 	self.GetClientWindow().Bind(wx.EVT_ERASE_BACKGROUND, self.OnEraseBackground)
+
 #####
-
-    def onMaximize(self, event):
-	'''
-	Handles the window's maximize event. This involves moving the tool
-	windows back to logical places.
-	'''
-	if(not self.IsMaximized()):
-	    print 'maximize'
-	else:
-	    print 'restore'
-	self.miniFrame.SetPosition(wx.Point(20,20))
-	event.Skip()
-
-    def onIconize(self, event):
-	'''
-	Handles the windows minimize
-	'''
-	if(not self.IsIconized()):
-	    print 'icon!'
-	else:
-	    print 'no icon!'
-	event.Skip()
-
-    def onShow(self, event):
-	print 'showing!'
-	event.Skip()
-
-    def onActivate(self, event):
-	if(self.IsActive()):
-	    self.toolPanel.SetTransparent(150)
-	else:
-	    self.toolPanel.SetTransparent(255)
-	event.Skip()
-#####
-
     def CreateTopToolBar(self):
 	toolbar = self.CreateToolBar()
 	
@@ -436,36 +386,12 @@ class TilemFrame(wx.MDIParentFrame):
 		toolbar.AddSeparator()
 	    else:
 		bmp = wx.Bitmap(icon, wx.BITMAP_TYPE_PNG)
-		#self, id, bitmap,
-                      #shortHelpString = '',
-                      #longHelpString = '',
-                      #isToggle = 0):
-		#AddSimpleTool(self, id, bitmap, shortHelpString='', longHelpString='', isToggle=0)			
-		#wx.ToolBar.AddSimpleTool
 		tool = toolbar.AddSimpleTool(id=-1, bitmap=bmp, shortHelpString=label)
 		self.Bind(wx.EVT_MENU, handler, tool)
 		    
 	toolbar.Realize()
 
 	return toolbar
-
-    def CreateSidePanel(self):
-#            self.panel1 = wx.Panel(id=wx.NewId(), name='panel1',
-#                  parent=self, pos=wx.Point(0, 0), size=wx.Size(392, 216),
-#                  style=wx.TAB_TRAVERSAL)
-            self.panel1 = SidePanel(self)
-            self.panel1.Raise()
-#
-#            self.button1 = wx.Button(id=wx.NewId(),
-#                  label='button1', name='button1', parent=self.panel1,
-#                  pos=wx.Point(208, 136), size=wx.Size(75, 23), style=0)
-#            panel1 = SidePanel(self)
-#            panel1.Raise()
-
-#            self.SetToolBar(panel1)
-
-#            self.panel1.Realize()
-
 
 
     def CreateFileMenu(self):
@@ -701,66 +627,21 @@ class TilemFrame(wx.MDIParentFrame):
 	self.winCount = self.winCount + 1
 
     def OnOpen(self, evt):
-	    openDialog = wx.FileDialog(self, "Choose a file", "", "", romFileTypes, wx.OPEN, )
-	    if openDialog.ShowModal() == wx.ID_OK:
-		try:
-		    selectedFile = open(name=openDialog.GetPath(), mode='rb')
-		    win = canvas.CanvasFrame(self, romFile=selectedFile)
-		    #win = wx.MDIChildFrame(self, -1, "File: %d" % self.winCount)
-		    
-		    #tb = wx.ToolBar(id=-1,
-		                    #name='toolBar1', parent=win, pos=wx.Point(0, 0),
-		                    #size=wx.Size(455, 28), style=wx.TB_DOCKABLE | wx.TB_HORIZONTAL | wx.NO_BORDER)		    
-		    #win.SetToolBar(tb)
-		    #tb.Realize()
-
-		    #self.Bind(wx.EVT_SIZING, self.OnTest, id=-1)		    
-		    
-		    #toolbar.AddSeparator()
-		    
-		#else:
-		    #bmp = wx.Bitmap(icon, wx.BITMAP_TYPE_PNG)
-		    #self, id, bitmap,
-			  #shortHelpString = '',
-			  #longHelpString = '',
-			  #isToggle = 0):
-		    #AddSimpleTool(self, id, bitmap, shortHelpString='', longHelpString='', isToggle=0)			
-		    #wx.ToolBar.AddSimpleTool
-		    #tool = toolbar.AddSimpleTool(id=-1, bitmap=bmp, shortHelpString=label)
-		    #self.Bind(wx.EVT_MENU, handler, tool)
-		    
-		    #self.comboBox1 = wx.ComboBox(choices=[],
-				  #id=wxID_MDICHILDFRAME1COMBOBOX1, name='comboBox1',
-				  #parent=self.toolBar1, pos=wx.Point(8, 0), size=wx.Size(130, 21),
-				  #style=0, value='comboBox1')
-		    #self.comboBox1.SetLabel('comboBox1')
-		    
-		    #self.staticBitmap1 = wx.StaticBitmap(bitmap=wx.NullBitmap,
-				  #id=wxID_MDICHILDFRAME1STATICBITMAP1, name='staticBitmap1',
-				  #parent=self.toolBar1, pos=wx.Point(144, 0), size=wx.Size(16, 16),
-				  #style=0)
-		    
-		    #self.staticBitmap2 = wx.StaticBitmap(bitmap=wx.NullBitmap,
-				  #id=wxID_MDICHILDFRAME1STATICBITMAP2, name='staticBitmap2',
-				  #parent=self.toolBar1, pos=wx.Point(168, 0), size=wx.Size(16, 16),
-				  #style=0)
-		    
-		    #self.comboBox2 = wx.ComboBox(choices=[],
-				  #id=wxID_MDICHILDFRAME1COMBOBOX2, name='comboBox2',
-				  #parent=self.toolBar1, pos=wx.Point(168, 0), size=wx.Size(130, 21),
-				  #style=0, value='comboBox2')
-		    
-		    #canvas = ScrolledWindow.MyCanvas(win, openFile=selectedFile)
-		    win.Show(True)
-		    self.winCount = self.winCount + 1
-		    
-		#finally:
-		    #selectedFile.close
-		    
-		except IOError:
-		    pass
+	openDialog = wx.FileDialog(self, "Choose a file", "", "", romFileTypes, wx.OPEN )
+	if openDialog.ShowModal() == wx.ID_OK:
+	    try:
+		selectedFile = open(name=openDialog.GetPath(), mode='rb')
+		win = canvas.CanvasFrame(self, romFile=selectedFile)
+		win.Show(True)
+		self.winCount = self.winCount + 1
 		
-	    openDialog.Destroy()	    
+	    except IOError:
+		pass
+	    
+	    finally:
+		selectedFile.close()
+	    
+	openDialog.Destroy()	    
     
     def OnReopen(self, evt):
 	print "OnReopen"
