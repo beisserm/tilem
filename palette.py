@@ -1,4 +1,12 @@
 import wx
+#import wx.lib
+#from cubecolourdialog import CubeColourDialog
+
+
+from wx.lib.agw.cubecolourdialog import CubeColourDialog
+
+#from wx.lib.agw import f
+from wx.lib.agw.flatnotebook import FlatNotebook
 
 from utils.enthoughtSizer import FlowSizer
 
@@ -158,9 +166,9 @@ class PaletteFrame(wx.MiniFrame):
 
 # -----------------------------------------------------------------------------
     
-class ColoringBook(wx.Notebook):
+class ColoringBook(wx.lib.agw.flatnotebook.FlatNotebook):
     def __init__(self, prnt):
-        wx.Notebook.__init__(self, parent=prnt)
+        wx.lib.agw.flatnotebook.FlatNotebook.__init__(self, parent=prnt)
 
         # create the page windows as children of the notebook
         page1 = wx.Panel(self, -1)
@@ -185,6 +193,7 @@ class ColoringBook(wx.Notebook):
             #bytes long. 
             #"""
         
+	self.colorList = colorList = []    
         
         for color in prnt.GetPalettes()['default']:
 
@@ -201,6 +210,8 @@ class ColoringBook(wx.Notebook):
             blue = color[6:]
             #colorBox = wx.BitmapButton(bitmap=bm, id=-1, name='bitmapButton1', parent=page1, size=wx.Size(12, 12), style=wx.BU_AUTODRAW)
             colorBox = wx.Button(id=-1, parent=page1, size=wx.Size(12, 12), style=wx.NO_FULL_REPAINT_ON_RESIZE | wx.SIMPLE_BORDER | wx.NO_3D | wx.NO_BORDER | wx.ALWAYS_SHOW_SB | wx.BU_EXACTFIT )
+
+	    self.Bind(wx.EVT_BUTTON, self.OnPickColor, colorBox)            
             #colorBox.SetInitialSize(wx.Size(12,12))
             #colorBox.SetVirtualSize(wx.Size(12,12))
             #colorBox.SetMaxSize(wx.Size(12,12))
@@ -209,6 +220,7 @@ class ColoringBook(wx.Notebook):
             colorBox.SetForegroundColour('#' + color[2:])
             colorBox.SetToolTipString('(' + red + ', ' + green + ', ' + blue + ')' + '\n' + color)
             flow.Add(colorBox, 0, wx.ALL, 2)
+	    colorList.append(colorBox.GetId())
         
         page1.SetSizer(flow)
         self.Layout()
@@ -220,8 +232,24 @@ class ColoringBook(wx.Notebook):
         self.AddPage(page1, "Default")
 
     def AddPage(self, page, text):
-        wx.Notebook.AddPage(self, page=page, text=text)
+        wx.lib.agw.flatnotebook.FlatNotebook.AddPage(self, page=page, text=text)
 
+    def OnPickColor(self, event):
+	buttonObject = event.GetEventObject()	
+	backgroundColor = buttonObject.GetBackgroundColour()
+	colordlg = CubeColourDialog(self, prevColor=backgroundColor)
+	if colordlg.ShowModal() == wx.ID_OK:
+	    color = colordlg.GetRGBAColour()
+	    buttonObject.SetBackgroundColour(color)
+	    colordlg.Destroy()
+	
+	#dlg = wx.ColourDialog(self)
+	#dlg.GetColourData().SetChooseFull(True)
+	#if dlg.ShowModal() == wx.ID_OK:
+	#    self.sketch.SetColor(dlg.GetColourData().GetColour())
+	#dlg.Destroy()	
+	
+    
 
 class PageOne(wx.Panel):
     def __init__(self, parent):

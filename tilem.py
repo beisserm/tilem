@@ -6,6 +6,7 @@ __date__ ="$Oct 16, 2009 6:33:40 PM$"
 
 from dialogs.gotoAddressDialog import GotoDialog
 from ToolPanel import ToolPanel
+from wx.lib.agw.cubecolourdialog import CubeColourDialog
 
 import  wx
 
@@ -331,6 +332,7 @@ WonderSwan (*.ws, *.wsc)|*.ws;*.wsc|\
 X68000 (*.xdf)|*.xdf|\
 All files (*.*)|*.*"
 #--------------
+
 
 class TilemFrame(wx.MDIParentFrame):
     def __init__(self):

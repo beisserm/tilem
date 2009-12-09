@@ -33,41 +33,41 @@ class CanvasFrame(wx.MDIChildFrame):
 	"""
 	def __init__(self, prnt, romFile=None): 
 		wx.MDIChildFrame.__init__(self, parent=prnt)
-		
+
 		vbox = wx.BoxSizer(wx.VERTICAL)
-	
+
 		self.toolBar = toolBar = wx.ToolBar(id=-1, name='toolBar1', parent=self, pos=wx.DefaultPosition,
-			            size=wx.Size(455, 28), style=wx.TB_HORIZONTAL | wx.NO_BORDER | wx.TB_BOTTOM )		    
+		                                    size=wx.Size(455, 28), style=wx.TB_HORIZONTAL | wx.NO_BORDER | wx.TB_BOTTOM )		    
 
 		toolBar.zoomSelect = wx.ComboBox(choices=zoomSelections,
-		        id=-1, name='zoom',
-		        parent=toolBar, pos=wx.Point(2, 1), size=wx.Size(70, 20),
-		        style=wx.CB_READONLY, value='100%')
-		
+		                                 id=-1, name='zoom',
+		                                 parent=toolBar, pos=wx.Point(2, 1), size=wx.Size(70, 20),
+		                                 style=wx.CB_READONLY, value='100%')
+
 		toolBar.decoderSelect = wx.ComboBox(choices=decoderSelections,
-		        id=-1, name='decoder',
-		        parent=toolBar, pos=wx.Point(90, 1), size=wx.Size(180, 20),
-		        style=wx.CB_READONLY, value=decoderSelections[0])
+		                                    id=-1, name='decoder',
+		                                    parent=toolBar, pos=wx.Point(90, 1), size=wx.Size(180, 20),
+		                                    style=wx.CB_READONLY, value=decoderSelections[0])
 
 		toolBar.Realize()		
 		toolBar.Raise()
 
 		canvas = ScrolledCanvas(self, openFile=romFile)	
-		
+
 		vbox.Add(canvas, 1, wx.EXPAND)		
 		vbox.Add(toolBar, 0, wx.EXPAND)
-	
+
 		self.SetSizer(vbox)
 		self.Show(True)	
-	
+
 
 class ScrolledCanvas(wx.ScrolledWindow):	
 	"""
-	
+
 	"""	
 	def __init__(self, parent, id = -1, size = wx.DefaultSize, openFile = None):
 		wx.ScrolledWindow.__init__(self, parent, id, (0, 0), size=size, style=wx.SUNKEN_BORDER)	
-		
+
 		if openFile:
 			self.pixels = pixels = []			
 			self.fileBytes = fileBytes = BitBuffer(openFile.read())				
@@ -77,16 +77,16 @@ class ScrolledCanvas(wx.ScrolledWindow):
 			pixels.append(fileBytes.readbits(8))
 			pixels.append(fileBytes.readbits(8))
 			pixels.append(fileBytes.readbits(8))
-			
+
 			for color in pixels:
 				print `hex(color)`
-				
+
 			print 'bits= ' + `hex(fileBytes.len)`
 			#print pixels[1]
 			#print pixels[2]	
-		
+
 		self.lines = []	
-		
+
 		self.maxWidth  = 1000
 		self.maxHeight = 1000
 		self.x = self.y = 0
@@ -112,8 +112,8 @@ class ScrolledCanvas(wx.ScrolledWindow):
 			self.DoDrawing(dc)
 
 		self.Bind(wx.EVT_LEFT_DOWN, self.OnLeftButtonEvent)
-		self.Bind(wx.EVT_LEFT_UP,   self.OnLeftButtonEvent)
-		self.Bind(wx.EVT_MOTION,	self.OnLeftButtonEvent)
+		self.Bind(wx.EVT_LEFT_UP, self.OnLeftButtonEvent)
+		self.Bind(wx.EVT_MOTION, self.OnLeftButtonEvent)
 		self.Bind(wx.EVT_PAINT, self.OnPaint)
 
 
@@ -216,9 +216,9 @@ class ScrolledCanvas(wx.ScrolledWindow):
 		dc.DrawRectangle(490,90, 20,20)
 
 		dc.GradientFillLinear((20, 260, 50, 50),
-							  "red", "blue")
+		                      "red", "blue")
 		dc.GradientFillConcentric((20, 325, 50, 50),
-								  "red", "blue", (25,25))
+		                          "red", "blue", (25,25))
 		self.DrawSavedLines(dc)
 		#dc.EndDrawing()
 
