@@ -1731,10 +1731,10 @@ class CustomPanel(wx.PyControl):
         self.SetBackgroundStyle(wx.BG_STYLE_CUSTOM)
 
         self._colourData = colourData
-        self._customColours = [None]*16
+        #self._customColours = [None]*16
         self._mainDialog = wx.GetTopLevelParent(self)
         
-        self.InitializeColours()
+        #self.InitializeColours()
 
         self._smallRectangleSize = wx.Size(20, 16)
         self._gridSpacing = 4
@@ -1747,20 +1747,20 @@ class CustomPanel(wx.PyControl):
         self.Bind(wx.EVT_LEFT_DOWN, self.OnLeftDown)
         
 
-    def InitializeColours(self):
+    #def InitializeColours(self):
 
-        curr = self._colourData.GetColour()
-        self._colourSelection = -1
+        #curr = self._colourData.GetColour()
+        #self._colourSelection = -1
         
-        for i in xrange(16):
-            c = self._colourData.GetCustomColour(i)
-            if c.Ok():
-                self._customColours[i] = self._colourData.GetCustomColour(i)
-            else:
-                self._customColours[i] = wx.Colour(255, 255, 255)
+        #for i in xrange(16):
+            #c = self._colourData.GetCustomColour(i)
+            #if c.Ok():
+                #self._customColours[i] = self._colourData.GetCustomColour(i)
+            #else:
+                #self._customColours[i] = wx.Colour(255, 255, 255)
 
-            if c == curr:
-                self._colourSelection = i
+            #if c == curr:
+                #self._colourSelection = i
 
 
     def DoGetBestSize(self):
@@ -1808,21 +1808,21 @@ class CustomPanel(wx.PyControl):
         self._mainDialog.DrawAll()
 
 
-    def PaintCustomColours(self, dc):
+    #def PaintCustomColours(self, dc):
 
-        for i in xrange(2):
-            for j in xrange(8):
+        #for i in xrange(2):
+            #for j in xrange(8):
             
-                ptr = i*8 + j
-                x = (j*(self._smallRectangleSize.x+self._gridSpacing)) + self._customColourRect.x
-                y = (i*(self._smallRectangleSize.y+self._gridSpacing)) + self._customColourRect.y
+                #ptr = i*8 + j
+                #x = (j*(self._smallRectangleSize.x+self._gridSpacing)) + self._customColourRect.x
+                #y = (i*(self._smallRectangleSize.y+self._gridSpacing)) + self._customColourRect.y
 
-                dc.SetPen(wx.BLACK_PEN)
+                #dc.SetPen(wx.BLACK_PEN)
 
-                brush = wx.Brush(self._customColours[ptr])
-                dc.SetBrush(brush)
+                #brush = wx.Brush(self._customColours[ptr])
+                #dc.SetBrush(brush)
 
-                dc.DrawRectangle(x, y, self._smallRectangleSize.x, self._smallRectangleSize.y)
+                #dc.DrawRectangle(x, y, self._smallRectangleSize.x, self._smallRectangleSize.y)
     
 
     def PaintHighlight(self, dc, draw=True):
@@ -1866,16 +1866,16 @@ class CustomPanel(wx.PyControl):
         dc.SetBrush(wx.NullBrush)
 
 
-    def AddCustom(self, colour):
+    #def AddCustom(self, colour):
 
-        self._colourSelection += 1
-        self._colourSelection = self._colourSelection%16
+        #self._colourSelection += 1
+        #self._colourSelection = self._colourSelection%16
             
-        dc = wx.ClientDC(self)
-        self._customColours[self._colourSelection] = colour.GetPyColour()
-        self._colourData.SetCustomColour(self._colourSelection, self._customColours[self._colourSelection])
+        #dc = wx.ClientDC(self)
+        #self._customColours[self._colourSelection] = colour.GetPyColour()
+        #self._colourData.SetCustomColour(self._colourSelection, self._customColours[self._colourSelection])
 
-        self.PaintCustomColours(dc)
+        #self.PaintCustomColours(dc)
         
 
 class CubeColourDialog(wx.Dialog):
@@ -1926,8 +1926,8 @@ class CubeColourDialog(wx.Dialog):
         #self.alphaCtrl = AlphaCtrl(self.mainPanel)
 
         #self.showAlpha = wx.CheckBox(self.mainPanel, -1, "Show Alpha Control")
-        self.customColours = CustomPanel(self.mainPanel, self._colourData)
-        self.addCustom = wx.Button(self.mainPanel, -1, "Add to custom colours")
+        #self.customColours = CustomPanel(self.mainPanel, self._colourData)
+        #self.addCustom = wx.Button(self.mainPanel, -1, "Add to custom colours")
         
         self.okButton = wx.Button(self.mainPanel, -1, "Ok")
         self.cancelButton = wx.Button(self.mainPanel, -1, "Cancel")
@@ -1967,7 +1967,7 @@ class CubeColourDialog(wx.Dialog):
         
         self.Bind(wx.EVT_BUTTON, self.OnOk, self.okButton)
         self.Bind(wx.EVT_BUTTON, self.OnCancel, self.cancelButton)
-        self.Bind(wx.EVT_BUTTON, self.OnAddCustom, self.addCustom)
+        #self.Bind(wx.EVT_BUTTON, self.OnAddCustom, self.addCustom)
 
         #self.Bind(wx.EVT_CHECKBOX, self.OnShowAlpha)
         self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
@@ -2040,11 +2040,11 @@ class CubeColourDialog(wx.Dialog):
         
         #mainSizer.Add(htmlSizer2, (1, 1), (1, 1), wx.LEFT|wx.RIGHT, 10)
 
-        customLabel = wx.StaticText(self.mainPanel, -1, "Custom Colours")
-        customSizer.Add(customLabel, 0, wx.BOTTOM, 3)
-        customSizer.Add(self.customColours, 0)
-        customSizer.Add(self.addCustom, 0, wx.TOP|wx.ALIGN_LEFT|wx.ALIGN_CENTER_VERTICAL, 5)
-        mainSizer.Add(customSizer, (0, 2), (2, 2), wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT, 5)
+        #customLabel = wx.StaticText(self.mainPanel, -1, "Custom Colours")
+        #customSizer.Add(customLabel, 0, wx.BOTTOM, 3)
+        #customSizer.Add(self.customColours, 0)
+        #customSizer.Add(self.addCustom, 0, wx.TOP|wx.ALIGN_LEFT|wx.ALIGN_CENTER_VERTICAL, 5)
+        #mainSizer.Add(customSizer, (0, 2), (2, 2), wx.ALIGN_CENTER|wx.LEFT|wx.RIGHT, 5)
 
         rgbSizer.Add(self.rgbBitmap, 0, wx.ALL, 15)
         mainSizer.Add(rgbSizer, (2, 0), (1, 1), wx.ALL|wx.EXPAND, 10)
@@ -2357,9 +2357,9 @@ class CubeColourDialog(wx.Dialog):
         self.OnCloseWindow(event)
 
 
-    def OnAddCustom(self, event):
+    #def OnAddCustom(self, event):
 
-        self.customColours.AddCustom(self._colour)
+        #self.customColours.AddCustom(self._colour)
 
   
     #def OnShowAlpha(self, event):
