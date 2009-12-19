@@ -1950,7 +1950,7 @@ class CubeColourDialog(wx.Dialog):
         #self.alphaSpin = wx.SpinCtrl(self.mainPanel, -1, "", min=0, max=255,
                                      #style=wx.SP_ARROW_KEYS)
         #self.accessCode = wx.TextCtrl(self.mainPanel, -1, "", style=wx.TE_READONLY)
-        #self.htmlCode = wx.TextCtrl(self.mainPanel, -1, "", style=wx.TE_READONLY)
+        self.htmlCode = wx.TextCtrl(self.mainPanel, -1, "", style=wx.TE_READONLY)
         #self.webSafe = wx.TextCtrl(self.mainPanel, -1, "", style=wx.TE_READONLY)
         #self.htmlName = wx.TextCtrl(self.mainPanel, -1, "", style=wx.TE_READONLY)
         
@@ -1994,7 +1994,7 @@ class CubeColourDialog(wx.Dialog):
         #self.showAlpha.SetValue(1)
         #self.accessCode.SetInitialSize((80, -1))
         #self.webSafe.SetInitialSize((80, -1))
-        #self.htmlCode.SetInitialSize((80, -1))
+        self.htmlCode.SetInitialSize((80, -1))
 
 
     def DoLayout(self):
@@ -2012,9 +2012,10 @@ class CubeColourDialog(wx.Dialog):
         buttonSizer = wx.BoxSizer(wx.VERTICAL)
         accessSizer = wx.BoxSizer(wx.VERTICAL)
         panelSizer = wx.BoxSizer(wx.VERTICAL)
-        #htmlSizer1 = wx.BoxSizer(wx.HORIZONTAL)
-        #htmlSizer2 = wx.BoxSizer(wx.VERTICAL)
-        #htmlSizer_a = wx.BoxSizer(wx.VERTICAL)
+        htmlSizer1 = wx.BoxSizer(wx.HORIZONTAL)
+        htmlSizer2 = wx.BoxSizer(wx.VERTICAL)
+        
+        htmlSizer_a = wx.BoxSizer(wx.VERTICAL)
         #htmlSizer_b = wx.BoxSizer(wx.VERTICAL)
         
         hsvSizer = wx.StaticBoxSizer(self.hsvSizer_staticbox, wx.HORIZONTAL)
@@ -2023,16 +2024,16 @@ class CubeColourDialog(wx.Dialog):
 
         #mainSizer.Add(self.showAlpha, (0, 0), (1, 1), wx.LEFT|wx.TOP, 10)
 
-        #htmlLabel1 = wx.StaticText(self.mainPanel, -1, "HTML Code")
+        htmlLabel1 = wx.StaticText(self.mainPanel, -1, "HTML Code")
         #htmlLabel2 = wx.StaticText(self.mainPanel, -1, "Web Safe")
-        #htmlSizer_a.Add(htmlLabel1, 0, wx.TOP, 3)
+        htmlSizer_a.Add(htmlLabel1, 0, wx.TOP, 3)
         #htmlSizer_b.Add(htmlLabel2, 0, wx.TOP, 3)
-        #htmlSizer_a.Add(self.htmlCode, 0, wx.TOP, 3)
+        htmlSizer_a.Add(self.htmlCode, 0, wx.TOP, 3)
         #htmlSizer_b.Add(self.webSafe, 0, wx.TOP, 3)
 
-        #htmlSizer1.Add(htmlSizer_a, 0)
+        htmlSizer1.Add(htmlSizer_a, 0)
         #htmlSizer1.Add(htmlSizer_b, 0, wx.LEFT, 10)
-        #mainSizer.Add(htmlSizer1, (1, 0), (1, 1), wx.LEFT|wx.RIGHT, 10)
+        mainSizer.Add(htmlSizer1, (1, 0), (1, 1), wx.LEFT|wx.RIGHT, 10)
         
         #htmlLabel3 = wx.StaticText(self.mainPanel, -1, "HTML Name")
         #htmlSizer2.Add(htmlLabel3, 0, wx.TOP|wx.BOTTOM, 3)
@@ -2277,7 +2278,7 @@ class CubeColourDialog(wx.Dialog):
         #self.alphaSpin.SetValue(self._colour.alpha)        
 
         self.SetPanelColours()
-        #self.SetCodes()
+        self.SetCodes()
         
 
     def SetPanelColours(self):
@@ -2287,12 +2288,12 @@ class CubeColourDialog(wx.Dialog):
         self.newColourPanel.RefreshColour(self._colour)
         
 
-    #def SetCodes(self):
-        #""" Sets the HTML/MS Access codes (if any) in the text controls. """
+    def SetCodes(self):
+        """ Sets the HTML/MS Access codes (if any) in the text controls. """
 
-        #colour = rgb2html(self._colour)
-        #self.htmlCode.SetValue(colour)
-        #self.htmlCode.Refresh()
+        colour = rgb2html(self._colour)
+        self.htmlCode.SetValue(colour)
+        self.htmlCode.Refresh()
 
         #if colour in HTMLCodes:
         #    colourName, access, webSafe = HTMLCodes[colour]
