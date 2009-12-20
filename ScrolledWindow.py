@@ -228,29 +228,4 @@ class MyCanvas(wx.ScrolledWindow):
 ##			 scrollTo = vsy - lines
 ##			 self.Scroll(-1, scrollTo)
 
-#---------------------------------------------------------------------------
-
-def runTest(frame, nb, log):
-	win = MyCanvas(nb)
-	return win
-
-#---------------------------------------------------------------------------
-
-
-
-overview = """
-<html>
-<body>
-The wx.ScrolledWindow class manages scrolling for its client area, transforming the 
-coordinates according to the scrollbar positions, and setting the scroll positions, 
-thumb sizes and ranges according to the area in view.
-</body>
-</html>
-"""
-
-
-if __name__ == '__main__':
-	import sys,os
-	import run
-	run.main(['', os.path.basename(sys.argv[0])] + sys.argv[1:])
 

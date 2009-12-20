@@ -2472,3 +2472,10 @@ class CubeColourDialog(wx.Dialog):
         """ Returns a 4-elements tuple of hue, saturation, brightness, alpha components. """
 
         return (self._colour.h, self._colour.s, self._colour.v, self._colour.alpha)
+
+    def GetHexColor(self):
+        """
+        Returns the 6 digit color proceded by a '#'
+        """
+        return self.htmlCode.GetValue().upper()
+    

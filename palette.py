@@ -107,7 +107,7 @@ class PaletteFrame(wx.MiniFrame):
         wx.MiniFrame.__init__(self, prnt, id=ID_Self, title='Color Palette', 
                               size=FRAME_SIZE, style=wx.DEFAULT_FRAME_STYLE | wx.FRAME_TOOL_WINDOW | wx.FRAME_NO_TASKBAR )
 
-        self.palettes = {"default":defaultPalette, "nes":nesPalette, "cga":cgaPalette, "ega":egaPalette}
+        self.palettes = {'default':defaultPalette, '6bpp NES':nesPalette, '4bpp CGA':cgaPalette, '8bpp EGA':egaPalette}
         self.numPalettes = 1
 	
         # setup menubar
@@ -117,23 +117,23 @@ class PaletteFrame(wx.MiniFrame):
 
         self.book = ColoringBook(self)
         
-	toolBar = wx.ToolBar(id=-1, name='toolBar1', parent=self, pos=wx.DefaultPosition,
+	self.toolBar = wx.ToolBar(id=-1, name='toolBar1', parent=self, pos=wx.DefaultPosition,
 	                     size=wx.Size(275, 28), style=wx.TB_HORIZONTAL | wx.NO_BORDER | wx.TB_BOTTOM )		    
 
-	toolBar.colorEncodings = wx.ComboBox(choices=bppSelections,
-	    id=-1, name='zoom', parent=toolBar, pos=wx.Point(2, 1), size=wx.Size(120, 20),
+	self.toolBar.colorEncodings = wx.ComboBox(choices=bppSelections,
+	    id=-1, name='zoom', parent=self.toolBar, pos=wx.Point(2, 1), size=wx.Size(120, 20),
 	    style=wx.CB_READONLY, value='15bpp RGB(555)')
-	self.Bind(wx.EVT_COMBOBOX, self.OnSelectEncoding, toolBar.colorEncodings)	
+	self.Bind(wx.EVT_COMBOBOX, self.OnSelectEncoding, self.toolBar.colorEncodings)	
 	
 	#change hard coded value
-	toolBar.NumColors = wx.TextCtrl(parent = toolBar, id=-1, value='512', size=wx.Size(50, 20), style=0,
+	self.toolBar.NumColors = wx.TextCtrl(parent = self.toolBar, id=-1, value='512', size=wx.Size(50, 20), style=0,
 	                                pos=wx.Point(140, 1))
-	toolBar.NumColors.SetMaxLength(5)
-        toolBar.NumColors.SetInsertionPoint(0)
+	self.toolBar.NumColors.SetMaxLength(5)
+        self.toolBar.NumColors.SetInsertionPoint(0)
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.book, 1, wx.EXPAND)
-	sizer.Add(toolBar, 0, wx.EXPAND)
+	sizer.Add(self.toolBar, 0, wx.EXPAND)
         self.SetSizer(sizer)
         #self.SetSizeHintsSz(FRAME_SIZE, FRAME_SIZE)
         self.Show(True)
@@ -175,11 +175,12 @@ class PaletteFrame(wx.MiniFrame):
 	paletteDlg = NewPaletteDialog(self)
 	
 	if paletteDlg.ShowModal() == wx.ID_OK:
-	    self.size = paletteDlg.GetSize()
-	    self.style = paletteDlg.GetFormat()
-	    page = ColoringPage(self, self.size, self.style)
-	    page.TranslateIndexedColoringPage()
+	    _size = paletteDlg.GetSize()
+	    _colorEncoding = paletteDlg.GetColorEncoding()
+	    page = ColoringPage(self, _size, _colorEncoding)
+	    page.UpdateAll()
 	    self.book.AddPage(page)
+	    
 	    
     def OnRandomize(self, evt):
 	"""
@@ -189,13 +190,18 @@ class PaletteFrame(wx.MiniFrame):
 
 	makeSureDlg = wx.MessageDialog(None, 'Randomize current palette?', 'Question', 
 	                       wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)	
-		
+	
+	page = self.book.GetCurrentPage()
+	selection = self.toolBar.colorEncodings.GetValue()
+	page.SetEncoding(selection)
+	
 	if makeSureDlg.ShowModal() == wx.ID_YES:
 	    for button in colorEntries:
 		red = random.randint(0, 255)
 		green = random.randint(0, 255)
 		blue = random.randint(0, 255)
-		button.UpdateColor('#' + str(red) + str(green) + str(blue))
+		newColor = "#%02x%02x%02x"%(red, green, blue)
+		button.UpdateColor(newColor.upper())
 
     def OnImportLocal(self, evt):
         pass
@@ -207,7 +213,23 @@ class PaletteFrame(wx.MiniFrame):
 	selection = evt.GetString()
 	page = self.book.GetCurrentPage()
 	page.SetEncoding(selection)
+	page.UpdateAll()
+	
 
+# -----------------------------------------------------------------------------	
+class ColoringBook(wx.lib.agw.flatnotebook.FlatNotebook):
+    def __init__(self, prnt):
+        wx.lib.agw.flatnotebook.FlatNotebook.__init__(self, prnt)
+	page = ColoringPage(self)
+	self.AddPage(page)
+	
+    def AddPage(self, page):
+	"""
+	Adds a page (tab) to this notebook	
+	@param page
+	         The page (tab) to add to this notebook
+	"""
+        wx.lib.agw.flatnotebook.FlatNotebook.AddPage(self, page, page.GetTitle())
 # -----------------------------------------------------------------------------
 """
 A basic panel that's represents a tab on the color palette window.
@@ -238,12 +260,12 @@ class ColoringPage(wx.Panel):
             #expected to contain a series of RGB bytes and be width*height*3
             #bytes long. 
             #"""        
-	if (encoding == 'default' or encoding == '4bpp CGA' or encoding == '6bpp NES' or encoding == '8bpp EGA'):
-	    for color in prnt.GetPalettes()[encoding]:
-		self.__CreateButton(color)
-	else:
-	    for color in range(size):
-		self.__CreateButton()
+	#if (encoding == 'default' or encoding == '4bpp CGA' or encoding == '6bpp NES' or encoding == '8bpp EGA'):
+	    #for color in prnt.GetPalettes()[encoding]:
+		#self.__CreateButton(color)
+	#else:
+	for color in range(size):
+	    self.__CreateButton()
 
         self.SetSizer(self.flowSizer)
 
@@ -257,8 +279,8 @@ class ColoringPage(wx.Panel):
 	colordlg = CubeColourDialog(self, prevColor=backgroundColor)
 	
 	if colordlg.ShowModal() == wx.ID_OK:
-	    rgbColor = colordlg.GetRGBAColour()
-	    buttonObject.UpdateColorFromPicker(rgbColor)
+	    rgbColor = colordlg.GetHexColor()
+	    buttonObject.UpdateColor(rgbColor)
 	    colordlg.Destroy()
 	
     def GetTitle(self):
@@ -276,6 +298,10 @@ class ColoringPage(wx.Panel):
     def SetEncoding(self, encoding):
 	self.encoding = encoding
 
+    def UpdateAll(self):
+	for entry in self.colorEntries:
+	    entry.UpdateSelf()
+	
     def __CreateButton(self, color=u'#FFFFFF'):
 	"""
 	@param color
@@ -287,21 +313,6 @@ class ColoringPage(wx.Panel):
 	self.flowSizer.Add(colorBox, 0, wx.ALL, 2)
     
     
-# -----------------------------------------------------------------------------
-class ColoringBook(wx.lib.agw.flatnotebook.FlatNotebook):
-    def __init__(self, prnt):
-        wx.lib.agw.flatnotebook.FlatNotebook.__init__(self, prnt)
-	page = ColoringPage(self)
-	self.AddPage(page)
-	
-    def AddPage(self, page):
-	"""
-	Adds a page (tab) to this notebook	
-	@param page
-	         The page (tab) to add to this notebook
-	"""
-        wx.lib.agw.flatnotebook.FlatNotebook.AddPage(self, page, page.GetTitle())
-	
 # -----------------------------------------------------------------------------
 
 class ColoringButton(wx.BitmapButton):
@@ -328,6 +339,15 @@ class ColoringButton(wx.BitmapButton):
     def GetPerceivedColor(self):
 	return self.perceivedColor    
     
+    def UpdateSelf(self):
+	"""
+	Updates the button based upon the current encoding selection and the 
+	current actualColor. This is used to update a button when the user 
+	selects a different encoding scheme.
+	"""
+	self.__translateToClosestColor(self.actualColor)
+	self.__setToolTip(self.perceivedColor)	
+    
     def UpdateColor(self, colorStr):
 	self.__translateToClosestColor(colorStr)
 	self.__setToolTip(self.perceivedColor)
@@ -351,7 +371,7 @@ class ColoringButton(wx.BitmapButton):
 	     translator == '24bpp RGB(888)' or translator == '32bpp ARGB(8888)'):
 	    self.__translateClosestRGBColor(colorStr)
         else:
-	    print 'Failure update apparent color!'
+	    print 'Failure updating apparent color!'
 	
     def __translateClosestIndexedColor(self, colorStr, colorTable):
 	"""
@@ -372,14 +392,13 @@ class ColoringButton(wx.BitmapButton):
 	    r = int(paletteColor[1:3], 16)
 	    g = int(paletteColor[3:5], 16)
 	    b = int(paletteColor[5:], 16)
-	    print str(r) + str(g) + str(b)
 	    diff = int(math.fabs(targetR - r) + math.fabs(targetG - g) + math.fabs(targetB - b))
-	    print 'Diff: ' + str(diff)
+	    #print 'Diff: ' + str(diff)
 	    if diff < bestDiff:
 		bestDiff = diff
-		print 'Best Diff: ' + str(bestDiff)
+		#print 'Best Diff: ' + str(bestDiff)
 		bestColor = paletteColor
-		print 'Best color:' + str(bestColor)
+		#print 'Best color:' + str(bestColor)
 	
 	self.actualColor = colorStr
 	self.perceivedColor = str(bestColor)
@@ -420,15 +439,14 @@ class ColoringButton(wx.BitmapButton):
 	self.SetToolTipString('(' + red + ', ' + green + ', ' + blue + ')' + '\n' + color)	    
 	#self.SetToolTipString('(' + red + ', ' + green + ', ' + blue + ')') # + '\n' + color)	    	
 	
-    def __setToolTipFromPicker(self, colorStr):
-	"""
-	Updates the tooltip display for a color in the palette. This should always
-	be the perceived color
-	@param color
+    #def __setToolTipFromPicker(self, colorStr):
+	#"""
+	#Updates the tooltip display for a color in the palette. This should always
+	#be the perceived color
+	#@param color
 
-	"""
-	print colorStr
-	self.__setToolTip(colorStr[1:]) # where is the xtra '#' coming from????
+	#"""
+	#self.__setToolTip(colorStr[1:]) # where is the xtra '#' coming from????
 	#red = colorStr[1:3]
 	#green = colorStr[3:5]
 	#blue = colorStr[5:]

@@ -49,9 +49,9 @@ class NewPaletteDialog(wx.Dialog):
               label='Format', name='formatText', parent=self, pos=wx.Point(16,
               68), size=wx.Size(34, 13), style=0)
 
-        self.formatSelection = wx.ComboBox(choices=bppSelections,
-              id=wxID_NEWPALETTEDIALOGCOMBOBOX1, name='formatSelection', parent=self,
-              pos=wx.Point(64, 64), size=wx.Size(130, 21), style=wx.CB_READONLY, value='formatSelection')
+        self.colorEncoding = wx.ComboBox(choices=bppSelections,
+              id=wxID_NEWPALETTEDIALOGCOMBOBOX1, name='colorEncoding', parent=self,
+              pos=wx.Point(64, 64), size=wx.Size(130, 21), style=wx.CB_READONLY, value='colorEncoding')
 
         self.OkButton = wx.Button(id=ID_OkButton, label='OK',
               name='OkButton', parent=self, pos=wx.Point(48, 112),
@@ -79,5 +79,7 @@ class NewPaletteDialog(wx.Dialog):
         '''
         return self.sizeField.GetValue()
     
-    def GetFormat(self):
-        return self.formatSelection.GetSelection()
+    def GetColorEncoding(self):
+        foo = self.colorEncoding.GetValue()
+        print foo
+        return foo

@@ -29,7 +29,7 @@ class ToolPanel(wx.MiniFrame):
 		self.SetSizeHintsSz(FRAME_SIZE, FRAME_SIZE)		
 		
 		self.bitmapButton1 = wx.BitmapButton(
-		    bitmap=wx.Bitmap(u'C:/tilemPy/icons/select-16.png', wx.BITMAP_TYPE_PNG),
+		    bitmap=wx.Bitmap(u'./icons/select-16.png', wx.BITMAP_TYPE_PNG),
 		    id=ID_Selection, 
 		    name='bitmapButton1', 
 		    parent=pane,
@@ -40,7 +40,7 @@ class ToolPanel(wx.MiniFrame):
 		self.Bind(wx.EVT_TOOL, self.OnSelect, id=ID_Selection)
 	
 		self.bitmapButton2 = wx.BitmapButton(
-		    bitmap=wx.Bitmap(u'C:/tilemPy/icons/moveSelection-16.png', wx.BITMAP_TYPE_PNG),
+		    bitmap=wx.Bitmap(u'./icons/moveSelection-16.png', wx.BITMAP_TYPE_PNG),
 		    id=ID_MoveSelection,
 		    name='bitmapButton2',
 		    parent=pane,
@@ -51,7 +51,7 @@ class ToolPanel(wx.MiniFrame):
 		self.Bind(wx.EVT_TOOL, self.OnMoveSelection, id=ID_MoveSelection)
 	
 		self.bitmapButton3 = wx.BitmapButton(
-		    bitmap=wx.Bitmap(u'C:/tilemPy/icons/zoom-16.png', wx.BITMAP_TYPE_PNG), 
+		    bitmap=wx.Bitmap(u'./icons/zoom-16.png', wx.BITMAP_TYPE_PNG), 
 		    id=ID_Zoom,
 		    name='bitmapButton3', 
 		    parent=pane, 
@@ -62,7 +62,7 @@ class ToolPanel(wx.MiniFrame):
 		self.Bind(wx.EVT_TOOL, self.OnZoom, id=ID_Zoom)		
 	
 		self.bitmapButton4 = wx.BitmapButton(
-		    bitmap=wx.Bitmap(u'C:/tilemPy/icons/dropper-16.png', wx.BITMAP_TYPE_PNG), 
+		    bitmap=wx.Bitmap(u'./icons/dropper-16.png', wx.BITMAP_TYPE_PNG), 
 		    id=ID_ColorPicker,
 		    name='bitmapButton4', 
 		    parent=pane, 
@@ -73,7 +73,7 @@ class ToolPanel(wx.MiniFrame):
 		self.Bind(wx.EVT_TOOL, self.OnColorSelector, id=ID_ColorPicker)		
 	
 		self.bitmapButton5 = wx.BitmapButton(
-		    bitmap=wx.Bitmap(u'C:/tilemPy/icons/pencil-16.png', wx.BITMAP_TYPE_PNG), 
+		    bitmap=wx.Bitmap(u'./icons/pencil-16.png', wx.BITMAP_TYPE_PNG), 
 		    id=ID_PencilDraw,
 		    name='bitmapButton5', 
 		    parent=pane, 
@@ -84,7 +84,7 @@ class ToolPanel(wx.MiniFrame):
 		self.Bind(wx.EVT_TOOL, self.OnPencilDraw, id=ID_PencilDraw)		
 	
 		self.bitmapButton6 = wx.BitmapButton(
-		    bitmap=wx.Bitmap(u'C:/tilemPy/icons/line-16.png', wx.BITMAP_TYPE_PNG), 
+		    bitmap=wx.Bitmap(u'./icons/line-16.png', wx.BITMAP_TYPE_PNG), 
 		    id=ID_DrawLine,
 		    name='bitmapButton6',
 		    parent=pane, pos=wx.Point(32, 60),
@@ -94,7 +94,7 @@ class ToolPanel(wx.MiniFrame):
 		self.Bind(wx.EVT_TOOL, self.OnDrawLine, id=ID_DrawLine)		
 	
 		self.bitmapButton7 = wx.BitmapButton(
-		    bitmap=wx.Bitmap(u'C:/tilemPy/icons/fill-16.png', wx.BITMAP_TYPE_PNG), 
+		    bitmap=wx.Bitmap(u'./icons/fill-16.png', wx.BITMAP_TYPE_PNG), 
 		    id=ID_FloodFill,
 		    name='bitmapButton7',
 		    parent=pane,
@@ -105,7 +105,7 @@ class ToolPanel(wx.MiniFrame):
 		self.Bind(wx.EVT_TOOL, self.OnFloodFill, id=ID_FloodFill)		
 	
 		self.bitmapButton8 = wx.BitmapButton(
-		    bitmap=wx.Bitmap(u'C:/tilemPy/icons/color-replace-16.png', wx.BITMAP_TYPE_PNG),
+		    bitmap=wx.Bitmap(u'./icons/color-replace-16.png', wx.BITMAP_TYPE_PNG),
 		    id=ID_Recolor,
 		    name='bitmapButton8', 
 		    parent=pane,
@@ -116,7 +116,7 @@ class ToolPanel(wx.MiniFrame):
 		self.Bind(wx.EVT_TOOL, self.OnColorReplace, id=ID_Recolor)		
 	
 		self.bitmapButton9 = wx.BitmapButton(
-		    bitmap=wx.Bitmap(u'C:/tilemPy/icons/shift-left-16.png', wx.BITMAP_TYPE_PNG),
+		    bitmap=wx.Bitmap(u'./icons/shift-left-16.png', wx.BITMAP_TYPE_PNG),
 		    id=ID_ShiftLeft,
 		    name='bitmapButton9',
 		    parent=pane, 
@@ -127,7 +127,7 @@ class ToolPanel(wx.MiniFrame):
 		self.Bind(wx.EVT_TOOL, self.OnShiftLeft, id=ID_ShiftLeft)		
 	
 		self.bitmapButton10 = wx.BitmapButton(
-		    bitmap=wx.Bitmap(u'C:/tilemPy/icons/shift-right-16.png', wx.BITMAP_TYPE_PNG), 
+		    bitmap=wx.Bitmap(u'./icons/shift-right-16.png', wx.BITMAP_TYPE_PNG), 
 		    id=ID_ShiftRight,
 		    name='bitmapButton10', 
 		    parent=pane, 
@@ -138,7 +138,7 @@ class ToolPanel(wx.MiniFrame):
 		self.Bind(wx.EVT_TOOL, self.OnShiftRight, id=ID_ShiftRight)		
 	
 		self.bitmapButton11 = wx.BitmapButton(
-		    bitmap=wx.Bitmap(u'C:/tilemPy/icons/shift-up-16.png', wx.BITMAP_TYPE_PNG),
+		    bitmap=wx.Bitmap(u'./icons/shift-up-16.png', wx.BITMAP_TYPE_PNG),
 		    id=ID_ShiftUp,
 		    name='bitmapButton11',
 		    parent=pane,
@@ -149,7 +149,7 @@ class ToolPanel(wx.MiniFrame):
 		self.Bind(wx.EVT_TOOL, self.OnShiftUp, id=ID_ShiftUp)		
 	
 		self.bitmapButton12 = wx.BitmapButton(
-		    bitmap=wx.Bitmap(u'C:/tilemPy/icons/shift-down-16.png', wx.BITMAP_TYPE_PNG),
+		    bitmap=wx.Bitmap(u'./icons/shift-down-16.png', wx.BITMAP_TYPE_PNG),
 		    id=ID_ShiftDown,
 		    name='bitmapButton12',
 		    parent=pane,
@@ -160,7 +160,7 @@ class ToolPanel(wx.MiniFrame):
 		self.Bind(wx.EVT_TOOL, self.OnShiftDown, id=ID_ShiftDown)		
 	
 		self.bitmapButton13 = wx.BitmapButton(
-		    bitmap=wx.Bitmap(u'C:/tilemPy/icons/page-up-16.png', wx.BITMAP_TYPE_PNG), 
+		    bitmap=wx.Bitmap(u'./icons/page-up-16.png', wx.BITMAP_TYPE_PNG), 
 		    id=ID_ScrollUp,
 		    name='bitmapButton13',
 		    parent=pane, 
@@ -171,7 +171,7 @@ class ToolPanel(wx.MiniFrame):
 		self.Bind(wx.EVT_TOOL, self.OnPageUp, id=ID_ScrollUp)		
 	
 		self.bitmapButton14 = wx.BitmapButton(
-		    bitmap=wx.Bitmap(u'C:/tilemPy/icons/page-down-16.png', wx.BITMAP_TYPE_PNG), 
+		    bitmap=wx.Bitmap(u'./icons/page-down-16.png', wx.BITMAP_TYPE_PNG), 
 		    id=ID_PageDown,
 		    name='bitmapButton14', 
 		    parent=pane, 
@@ -182,7 +182,7 @@ class ToolPanel(wx.MiniFrame):
 		self.Bind(wx.EVT_TOOL, self.OnPageDown, id=ID_PageDown)		
 	
 		self.bitmapButton15 = wx.BitmapButton(
-		    bitmap=wx.Bitmap(u'C:/tilemPy/icons/rowBack-16.png', wx.BITMAP_TYPE_PNG), 
+		    bitmap=wx.Bitmap(u'./icons/rowBack-16.png', wx.BITMAP_TYPE_PNG), 
 		    id=ID_RowBack,
 		    name='bitmapButton15', 
 		    parent=pane, 
@@ -193,7 +193,7 @@ class ToolPanel(wx.MiniFrame):
 		self.Bind(wx.EVT_TOOL, self.OnRowBackward, id=ID_RowBack)		
 		
 		self.bitmapButton16 = wx.BitmapButton(
-		    bitmap=wx.Bitmap(u'C:/tilemPy/icons/rowForward-16.png', wx.BITMAP_TYPE_PNG),
+		    bitmap=wx.Bitmap(u'./icons/rowForward-16.png', wx.BITMAP_TYPE_PNG),
 		    id=ID_RowForward,
 		    name='bitmapButton16', 
 		    parent=pane,
@@ -204,7 +204,7 @@ class ToolPanel(wx.MiniFrame):
 		self.Bind(wx.EVT_TOOL, self.OnRowForward, id=ID_RowForward)		
 	
 		self.bitmapButton17 = wx.BitmapButton(
-		    bitmap=wx.Bitmap(u'C:/tilemPy/icons/tileBack-16.png', wx.BITMAP_TYPE_PNG),
+		    bitmap=wx.Bitmap(u'./icons/tileBack-16.png', wx.BITMAP_TYPE_PNG),
 		    id=ID_TileBack,
 		    name='bitmapButton17', 
 		    parent=pane, 
@@ -215,7 +215,7 @@ class ToolPanel(wx.MiniFrame):
 		self.Bind(wx.EVT_TOOL, self.OnTileBackward, id=ID_TileBack)		
 	
 		self.bitmapButton18 = wx.BitmapButton(
-		    bitmap=wx.Bitmap(u'C:/tilemPy/icons/tileForward-16.png', wx.BITMAP_TYPE_PNG), 
+		    bitmap=wx.Bitmap(u'./icons/tileForward-16.png', wx.BITMAP_TYPE_PNG), 
 		    id=ID_TileForward,
 		    name='bitmapButton18', 
 		    parent=pane, 
@@ -226,7 +226,7 @@ class ToolPanel(wx.MiniFrame):
 		self.Bind(wx.EVT_TOOL, self.OnTileForward, id=ID_TileForward)		
 	
 		self.bitmapButton19 = wx.BitmapButton(
-		    bitmap=wx.Bitmap(u'C:/tilemPy/icons/byteBack-16.png', wx.BITMAP_TYPE_PNG),
+		    bitmap=wx.Bitmap(u'./icons/byteBack-16.png', wx.BITMAP_TYPE_PNG),
 		    id=ID_ByteBack,
 		    name='bitmapButton19',
 		    parent=pane,
@@ -237,7 +237,7 @@ class ToolPanel(wx.MiniFrame):
 		self.Bind(wx.EVT_TOOL, self.OnByteBackward, id=ID_ByteBack)		
 	
 		self.bitmapButton20 = wx.BitmapButton(
-		    bitmap=wx.Bitmap(u'C:/tilemPy/icons/byteForward-16.png', wx.BITMAP_TYPE_PNG), 
+		    bitmap=wx.Bitmap(u'./icons/byteForward-16.png', wx.BITMAP_TYPE_PNG), 
 		    id=ID_ByteForward,
 		    name='bitmapButton20',
 		    parent=pane,
