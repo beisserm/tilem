@@ -315,11 +315,15 @@ class ColoringPage(wx.Panel):
     
 # -----------------------------------------------------------------------------
 
-class ColoringButton(wx.BitmapButton):
+class ColoringButton(wx.lib.buttons.GenButton):
     def __init__(self, prnt, colorStr=u'#FFFFFF'):
-	wx.BitmapButton.__init__(self, parent = prnt, id=-1, 
-	                         bitmap = wx.EmptyBitmap(0, 0, -1), size = wx.Size(12, 12),
-	                         style = wx.BU_AUTODRAW | wx.NO_FULL_REPAINT_ON_RESIZE | wx.NO_BORDER) 
+	wx.lib.buttons.GenButton.__init__(self, parent = prnt, id=-1, size = wx.Size(12, 12),
+	                                  style = wx.BU_AUTODRAW | wx.NO_FULL_REPAINT_ON_RESIZE | wx.NO_BORDER) 
+	
+#(self, parent, id=-1, label='',
+                 #pos = wx.DefaultPosition, size = wx.DefaultSize,
+                 #style = 0, validator = wx.DefaultValidator,
+                 #name = "genbutton"):	
 	
 	#wxWindow* parent, wxWindowID id, const wxBitmap& bitmap, const wxPoint& pos = wxDefaultPosition, 
 	#const wxSize& size = wxDefaultSize, long style = wxBU_AUTODRAW,
@@ -330,7 +334,9 @@ class ColoringButton(wx.BitmapButton):
 	
 	self.actualColor = colorStr
 	self.perceivedColor = '#FFFFFF'
-	self.SetMargins(0, 0)
+	self.SetBezelWidth(0)
+	#self.SetMargins(0, 0)
+	
 	self.__translateToClosestColor(colorStr)
     
     def GetActualColor(self):
