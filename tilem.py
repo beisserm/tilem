@@ -360,7 +360,6 @@ class TilemFrame(wx.MDIParentFrame):
 	self.bg_bmp = images.GridBG.GetBitmap()
 	self.GetClientWindow().Bind(wx.EVT_ERASE_BACKGROUND, self.OnEraseBackground)
 
-#####
     def CreateTopToolBar(self):
 	toolbar = self.CreateToolBar()
 	
@@ -626,20 +625,18 @@ class TilemFrame(wx.MDIParentFrame):
 	#win.Show(True)
 	self.winCount = self.winCount + 1
 
+
     def OnOpen(self, evt):
 	openDialog = wx.FileDialog(self, "Choose a file", "", "", romFileTypes, wx.OPEN )
 	if openDialog.ShowModal() == wx.ID_OK:
 	    try:
-		selectedFile = open(name=openDialog.GetPath(), mode='rb')
-		win = canvas.CanvasFrame(self, romFile=selectedFile)
+		selectedFile = openDialog.GetPath() #= open(name=openDialog.GetPath(), mode='rb')
+		win = canvas.CanvasFrame(self, fileStr=selectedFile)
 		win.Show(True)
 		self.winCount = self.winCount + 1
 		
 	    except IOError:
 		pass
-	    
-	    finally:
-		selectedFile.close()
 	    
 	openDialog.Destroy()	    
     

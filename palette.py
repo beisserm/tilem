@@ -1,6 +1,7 @@
 import wx
 import random
 import math
+import numpy
 #import wx.lib
 #from cubecolourdialog import CubeColourDialog
 
@@ -215,6 +216,15 @@ class PaletteFrame(wx.MiniFrame):
 	page.SetEncoding(selection)
 	page.UpdateAll()
 	
+    def GetCurrentPalette(self):
+	"""
+	Returns a list of the colors in the current palette
+	""" 
+	page = self.book.GetCurrentPage()
+	buttonlist = page.GetColorEntries()
+	rgbPalette = map(button.GetPerceivedColor(), buttonList)
+	print rgbPalette
+	return rgpPalette
 
 # -----------------------------------------------------------------------------	
 class ColoringBook(wx.lib.agw.flatnotebook.FlatNotebook):
@@ -249,7 +259,7 @@ class ColoringPage(wx.Panel):
 	self.encoding = encoding
 	self.title = title
 	self.colorEntries = [] # Buttons
-	self.bppCorrectedColorEntries = [] # color strings
+	#self.bppCorrectedColorEntries = [] # color strings
         self.flowSizer = FlowSizer()
 
         #BitmapFromBuffer(width, height, dataBuffer, alphaBuffer=None):
@@ -269,7 +279,7 @@ class ColoringPage(wx.Panel):
 
         self.SetSizer(self.flowSizer)
 
-	
+
     def OnPickColor(self, event):
 	"""
 	Changes the color in the current palette based upon user input
@@ -282,37 +292,37 @@ class ColoringPage(wx.Panel):
 	    rgbColor = colordlg.GetHexColor()
 	    buttonObject.UpdateColor(rgbColor)
 	    colordlg.Destroy()
-	
+
     def GetTitle(self):
 	return self.title
-    
+
     def GetColorEntries(self):
 	return self.colorEntries
 
     def GetBppColorCorrectedEntries(self):
 	pass
-    
+
     def GetEncoding(self):
 	return self.encoding
-    
+
     def SetEncoding(self, encoding):
 	self.encoding = encoding
 
     def UpdateAll(self):
 	for entry in self.colorEntries:
 	    entry.UpdateSelf()
-	
+
     def __CreateButton(self, color=u'#FFFFFF'):
 	"""
 	@param color
-	         6 digit RGB Hex string preceeded by a '#'	
+	         6 digit RGB Hex string preceeded by a '#'
 	"""
 	colorBox = ColoringButton(prnt=self, colorStr=color)
-	self.Bind(wx.EVT_BUTTON, self.OnPickColor, colorBox) 		
+	self.Bind(wx.EVT_BUTTON, self.OnPickColor, colorBox)
 	self.colorEntries.append(colorBox)
 	self.flowSizer.Add(colorBox, 0, wx.ALL, 2)
-    
-    
+
+
 # -----------------------------------------------------------------------------
 
 class ColoringButton(wx.lib.buttons.GenButton):
@@ -320,7 +330,7 @@ class ColoringButton(wx.lib.buttons.GenButton):
 	wx.lib.buttons.GenButton.__init__(self, parent = prnt, id=-1, size = wx.Size(12, 12),
 	                                  style = wx.BU_AUTODRAW | wx.NO_FULL_REPAINT_ON_RESIZE | wx.NO_BORDER) 
 	
-#(self, parent, id=-1, label='',
+	#(self, parent, id=-1, label='',
                  #pos = wx.DefaultPosition, size = wx.DefaultSize,
                  #style = 0, validator = wx.DefaultValidator,
                  #name = "genbutton"):	
@@ -329,7 +339,7 @@ class ColoringButton(wx.lib.buttons.GenButton):
 	#const wxSize& size = wxDefaultSize, long style = wxBU_AUTODRAW,
 	#const wxValidator& validator = wxDefaultValidator, const wxString& name = "button")
 	#,
-	                         #style=wx.BU_AUTODRAW | wx.NO_FULL_REPAINT_ON_RESIZE | wx.NO_BORDER)
+	#style=wx.BU_AUTODRAW | wx.NO_FULL_REPAINT_ON_RESIZE | wx.NO_BORDER)
 	#bitmap=wx.EmptyBitmap(0, 0, -1)
 	
 	self.actualColor = colorStr
@@ -358,10 +368,10 @@ class ColoringButton(wx.lib.buttons.GenButton):
 	self.__translateToClosestColor(colorStr)
 	self.__setToolTip(self.perceivedColor)
     
-    def UpdateColorFromPicker(self, color):
-	clrString = self.__sanitizeColorString(color)
-	self.__translateToClosestColor(clrString)
-	self.__setToolTipFromPicker(self.perceivedColor)
+    #def UpdateColorFromPicker(self, color):
+	#clrString = self.__sanitizeColorString(color)
+	#self.__translateToClosestColor(clrString)
+	#self.__setToolTipFromPicker(self.perceivedColor)
 
     def __translateToClosestColor(self, colorStr):
 	translator = self.GetParent().GetEncoding()
@@ -442,8 +452,7 @@ class ColoringButton(wx.lib.buttons.GenButton):
 	red = str(int(color[1:3] , 16))
 	green =  str(int(color[3:5], 16))
 	blue = str(int(color[5:], 16))		
-	self.SetToolTipString('(' + red + ', ' + green + ', ' + blue + ')' + '\n' + color)	    
-	#self.SetToolTipString('(' + red + ', ' + green + ', ' + blue + ')') # + '\n' + color)	    	
+	self.SetToolTipString('(' + red + ', ' + green + ', ' + blue + ')' + '\n' + color)
 	
     #def __setToolTipFromPicker(self, colorStr):
 	#"""
