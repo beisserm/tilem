@@ -221,10 +221,9 @@ class PaletteFrame(wx.MiniFrame):
 	Returns a list of the colors in the current palette
 	""" 
 	page = self.book.GetCurrentPage()
-	buttonlist = page.GetColorEntries()
-	rgbPalette = map(button.GetPerceivedColor(), buttonList)
-	print rgbPalette
-	return rgpPalette
+	buttonList = page.GetColorEntries()
+	rgbPalette = map(lambda button : button.GetBackgroundColour().Get(), buttonList)
+	return rgbPalette
 
 # -----------------------------------------------------------------------------	
 class ColoringBook(wx.lib.agw.flatnotebook.FlatNotebook):
@@ -309,6 +308,7 @@ class ColoringPage(wx.Panel):
 	self.encoding = encoding
 
     def UpdateAll(self):
+	print 'Updating all: ', len(self.colorEntries)
 	for entry in self.colorEntries:
 	    entry.UpdateSelf()
 

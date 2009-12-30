@@ -80,6 +80,4 @@ class NewPaletteDialog(wx.Dialog):
         return self.sizeField.GetValue()
     
     def GetColorEncoding(self):
-        foo = self.colorEncoding.GetValue()
-        print foo
-        return foo
+        return self.colorEncoding.GetValue()

@@ -5,6 +5,7 @@ __author__="Matt Beisser"
 __date__ ="$Oct 16, 2009 6:33:40 PM$"
 
 from dialogs.gotoAddressDialog import GotoDialog
+from dialogs.canvasSizeDialog import CanvasSizeDialog
 from ToolPanel import ToolPanel
 from cubecolourdialog import CubeColourDialog
 
@@ -613,6 +614,17 @@ class TilemFrame(wx.MDIParentFrame):
 	return helpMenu
 
 #####
+# Passthrough getters
+#####
+
+    def GetPalette(self):
+	"""
+	Passthrough getter to allow a canvas to get the current palette
+	"""
+	return self.paletteFrame.GetCurrentPalette()
+	
+    
+#####
 # Event handlers
 #####
 
@@ -725,7 +737,17 @@ class TilemFrame(wx.MDIParentFrame):
 	print "OnRotateCounterClockwise"
 
     def OnCanvasSize(self, evt):
-	print "OnCanvasSize"
+	activeWindow = self.GetActiveChild()
+	
+	if activeWindow != None:
+	    currentColumns = activeWindow.GetCanvasColumns()
+	    dlg = CanvasSizeDialog(self, currentColumns)
+
+	    if dlg.ShowModal() == wx.ID_OK:
+		newColumns = dlg.GetColumns()
+		activeWindow.SetCanvasColumns(newColumns)
+		
+	    dlg.Destroy()
 
     def OnSelectionSize(self, evt):
 	print "OnSelectionSize"
@@ -735,10 +757,9 @@ class TilemFrame(wx.MDIParentFrame):
 	dialog = GotoDialog(self)
 
 	if dialog.ShowModal() == wx.ID_OK:
-	    print 'HI!'
-	else:
-	    print 'bye'
-	    dialog.Destroy()
+	    pass
+
+	dialog.Destroy()
 #		   selected = dialog.GetSelections()
 #		   for selection in selected:
 #			  print str ( selection ) + ': ' + choices [ selection ]

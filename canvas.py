@@ -1,8 +1,10 @@
 import wx
 import images
 import os
+import stat
 import threading
 import numpy
+import math
 
 from dialogs.processFileDialog import ProcessFileDialog
 
@@ -11,7 +13,11 @@ from dialogs.processFileDialog import ProcessFileDialog
 from utils.bitbuffer import BitBuffer
 from utils.enthoughtSizer import FlowSizer
 
-zoomSelections = ['50%', '75%', '100%', '125%', '150%', '200%', '400%', '800%']
+# Standard 'pixel' size is 8x8
+PIXEL_ZOOM = 8
+zoomSelections = ['50%', '75%', '100%', '125%', '150%', '175%', '200%', '400%', '600%', '800%']
+zoomMapping = { '50%':(4, 4),    '75%':(6, 6),   '100%':(8, 8),   '125%':(10, 10), '150%':(12, 12), 
+               '175%':(14, 14), '200%':(16, 16), '400%':(32, 32), '600%':(48,48),  '800%':(64, 64)}
 
 decoderSelections = ['1bpp linear', '1bpp linear, reverse-order', '1bpp planar',
                      '2bpp linear', '2bpp linear, reverse-order', '2bpp planar',
@@ -70,8 +76,25 @@ class CanvasFrame(wx.MDIChildFrame):
 	self.canvas.UpdateBuffer(selection)
 
     def OnZoom(self, evt):
-	pass
+	zoom = evt.GetString()
+	self.canvas.SetZoom(zoomMapping[zoom])
 
+#####
+# Passthrough functions
+#####
+
+    def SetCanvasColumns(self, columns):
+	'''
+	Passthrough setter to set the number of canvas columsn on the
+	scrolled canvas.
+	@param columns
+	         integer (0-128)
+	'''
+	self.canvas.SetColumns(columns)
+	
+    def GetCanvasColumns(self):
+	return self.canvas.GetColumns()
+	
     
 #double a[2][4] = { { 1, 2, 3, 4 },
 #                   { 5, 6, 7, 8 } };
@@ -83,29 +106,59 @@ class ScrolledCanvas(wx.ScrolledWindow):
     def __init__(self, parent, id = -1, size = wx.DefaultSize, fileStr = None):
 	wx.ScrolledWindow.__init__(self, parent, id, (0, 0), size=size, style=wx.SUNKEN_BORDER)	
 
+	# filesize in bytes
+	self.fileSize = None
+	self.columns = 16
+	
+	# The working copy of the pixels in our current bitmap, adjusted for 
+	# the current bpp. Visually, the array is stored in 3D (x, y, z) with
+	# the width of the sprite being x, the height y, and being stored in
+	# the z axis. i.e., Each entry in the z-axis holds the tile (sprite) 
+	# with the current size / shape as specified by the user. The index
+	# into the x-y array holds a color value for the xth, yth element
+	# in the current tile (sprite). 0, 0 represents the upper left element
+	# in the bitmap.
+	
+	# The working copy of the pixels in our entire rom
 	self.pixels = None
-	self.fileSize = None # filesize in bytes
+	
+	# TODO: Should this be 1/2d?
+	# This array holds the rom broken up into tiles of sizes specified by
+	# the user. Standard sizes of tiles are 8x8 but can be of any size.
+	self.tiles = None
+	
+	# Column matrix of the raw bytes from the rom file. n x 1, where n is
+	# the number of bytes in the file.
+	self.fileBytes = None
+	
 	self.fileHandle = None
+	
+	self.bmp = None
 	
 	# CanvasFrame (parent ->) TilemFrame (has the ->) PaletteFrame
 	self.paletteColors = parent.GetParent().GetPalette()
 	
+	self.zoom = (8, 8)
+	
 	if fileStr:
 	    try:
 		self.fileHandle = open(fileStr, 'rb')
+		
+		
 		fileStats = os.stat(fileStr)
-		self.fileSize = fileStats[ST_SIZE]
+		self.fileSize = fileStats[stat.ST_SIZE]
+		#self.testImg = wx.Bitmap(fileStr, wx.BITMAP_TYPE_BMP)
+		#self.buff = '                                                                                                                   '
+		#print str(self.buff)
+		#self.testImg.CopyToBuffer(self.buff, wx.BitmapBufferFormat_RGB32)
+		#print map(ord, self.buff)
+		#print '##########'
 		
 		# Read a file one byte per element into a column array. We read
-		# it little endian, (left most bit being the LSB). Because it's 
-		# a column vector when we unpack a byte we will have a nice 
-		# (n x 8) vector to work with where each element is a single 
-		# bit. This allows us to decode arbitrary bits per pixel by 
-		# having a single row be the number of bits needed for a single 
-		# pixel
-		bytesArray = numpy.fromfile(self.fileHandle, dtype=numpy.uint8)
-		tempPixels = numpy.unpackbits(bytesArray)
-		self.pixels = numpy.reshape(tempPixels, tempPixels.size, 1)
+		# it little endian, (left most bit being the LSB).
+		self.bytesArray = numpy.fromfile(self.fileHandle, dtype=numpy.uint8)
+		#print self.bytesArray
+		self.bmp = self.CreateIndexedBitmap(self.bytesArray, 8, 8)
 	    except IOError:
 		print 'Unable to open file: ', fileStr
 	else:
@@ -120,12 +173,13 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	self.curLine = []
 	self.drawing = False
 
-	self.SetBackgroundColour("WHITE")
+	self.SetBackgroundColour("GREEN")
 	self.SetCursor(wx.StockCursor(wx.CURSOR_PENCIL))
-	bmp = images.Test2.GetBitmap()
-	mask = wx.Mask(bmp, wx.BLUE)
-	bmp.SetMask(mask)
-	self.bmp = bmp
+	#self.bmp = self.bitmapData
+	#bmp = images.Test2.GetBitmap()
+	#mask = wx.Mask(bmp, wx.BLUE)
+	#bmp.SetMask(mask)
+	#self.bmp = bmp
 
 	self.SetVirtualSize((self.maxWidth, self.maxHeight))
 	self.SetScrollRate(20,20)
@@ -134,7 +188,7 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	# Initialize the buffer bitmap. No real DC is needed at this point.
 	self.buffer = wx.EmptyBitmap(self.maxWidth, self.maxHeight)
 	dc = wx.BufferedDC(None, self.buffer)
-	dc.SetBackground(wx.Brush(self.GetBackgroundColour()))
+	#dc.SetBackground(wx.Brush(self.GetBackgroundColour()))
 	dc.Clear()
 	self.DoDrawing(dc)
 
@@ -145,7 +199,7 @@ class ScrolledCanvas(wx.ScrolledWindow):
 
 
 	
-    def GetIndexedBitmap(self, npArray, width=8, height=8):
+    def CreateIndexedBitmap(self, npArray, width=8, height=8, bpp=8):
 	"""
 	Creates a bitmap image of the specified size from a numpy array. Each 
 	entry in the array is assumed to be the index into the palette of the
@@ -165,7 +219,7 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	(Blue) (Black) (Blue) (Blue) 
 	
 	The width and height of the bitmap can be arbitrarily chosen by the
-	user and represent the desired tile (sprite) size.
+	user and represents the desired tile (sprite) size.
 	
 	NOTE: NumPy uses reversed column-row ordering compared to wxPython, 
 	so we generate images using height, width, not width, height 
@@ -175,26 +229,88 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	Taken from: http://wiki.wxpython.org/index.cgi/WorkingWithImages	
 	
 	@param npArray
-	         A 1bpp array of the file
+	         A numpy byte array of the file
 	@param width (int)
 	         The width of the desired bitmap in pixels
 	@param height (int)
 	         The height of the desired bitmaps in pixels
+	@param bpp (int)
+	         The desired bpp's of the bitmap
 	""" 
+	# 
+	# Create column vector of bytes, so when we unpack a byte we will have 
+	# a nice (n x 8) vector to work with where each element is a single 
+	# bit. This allows us to decode arbitrary bits per pixel by 
+	# having a single row be the number of bits needed for a single 
+	# pixel	
+	tempBits = numpy.unpackbits(npArray)
+	tempBits2 = numpy.reshape(tempBits, (math.ceil(tempBits.size / bpp), bpp))
+	reversedOrder = numpy.packbits(tempBits2, axis=-1)
+	shiftedBits = None
+	
+	if bpp == 1:
+	    shiftedBits = numpy.right_shift(reversedOrder, 7)
+	elif bpp == 2:
+	    shiftedBits = numpy.right_shift(reversedOrder, 6)
+	elif bpp == 3:
+	    shiftedBits = numpy.right_shift(reversedOrder, 5)
+	elif bpp == 4:
+	    shiftedBits = numpy.right_shift(reversedOrder, 4)
+	elif bpp == 8:
+	    shiftedBits = reversedOrder
+	
+	def wtf(x,y):
+	    self.paletteColors[int(x),int(y)]
+	
 	# Get the actual entry then lookup the entry in the palette table
-	rgbArray = fromfunction(lambda x,y: self.paletteColors(npArray[x,y]), npArray.shape)
-	array = numpy.zeros( (height, width, 3),'uint8')
-	array[:,:,] = colour
-	image = wx.EmptyImage(width, height)
-	image.SetData(array.tostring())
-	return image.ConvertToBitmap() # wx.BitmapFromImage(image)	
+	#rgbArray = numpy.fromfunction(wtf, size)
+	self.paletteColors = self.GetParent().GetParent().GetPalette()
+	
+	width = 2
+	height = 19	
+	
+	# This is terribly slow, fix me: numpy.fomfunction(lambda , shape)
+	rgbArray = list(map(lambda x: self.paletteColors[x], reversedOrder))
+	rgbArray2 = numpy.array(rgbArray, dtype=numpy.uint8).reshape(width, height, 3)
+	rgbArray2 = rgbArray2.reshape(width, height, 3)
+	
+	# TODO: Break up into tiles of w x h
+	bmp = wx.EmptyBitmap(width, height, 24)
+	bmp.CopyFromBuffer(rgbArray2.tostring(), wx.BitmapBufferFormat_RGB)
+        image = bmp.ConvertToImage()
+        image.Rescale(width * 8, height * 8)
+	bmp = image.ConvertToBitmap()
+	
+	return bmp
 
+
+    def ChangeIndexedImageBpp(self, bpp=1):
+	pass
+	
     def getWidth(self):
 	return self.maxWidth
 
     def getHeight(self):
 	return self.maxHeight
 
+    def SetZoom(self, zoomSize):
+	'''
+	@param zoomSize
+	         tuple (width, height) specifying the size of an indivual pixel
+	'''
+	self.zoom = zoomSize
+	image = self.bmp.ConvertToImage()
+        image.Rescale(zoomSize[0] * 2, 19 * zoomSize[1])
+	self.bmp = image.ConvertToBitmap()
+	
+	self.buffer = wx.EmptyBitmap(self.maxWidth, self.maxHeight)
+	dc = wx.BufferedDC(wx.ClientDC(self), self.buffer)
+	dc.Clear()
+	#self.DoDrawing(dc)
+	#self.buffer = wx.EmptyBitmap(2, 19, 24 )
+	#dc = wx.BufferedDC(wx.ClientDC(self), self.buffer)
+	#dc.Clear()
+	dc.DrawBitmap(self.bmp, 0, 0, False)
 
     def OnPaint(self, event):
 	#if BUFFERED:
@@ -212,104 +328,108 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	    #parent.toolBar.Raise()
 
 
-    def DoDrawing(self, dc, printing=False):
+    def DoDrawing(self, dc):
 	#dc.BeginDrawing()
 
-	dc.SetPen(wx.Pen('RED'))
-	dc.DrawRectangle(5, 5, 50, 50)
+	#dc.SetPen(wx.Pen('RED'))
+	#dc.DrawRectangle(5, 5, 50, 50)
 
-	dc.SetBrush(wx.LIGHT_GREY_BRUSH)
-	dc.SetPen(wx.Pen('BLUE', 4))
-	dc.DrawRectangle(15, 15, 50, 50)
-
-	dc.SetFont(wx.Font(14, wx.SWISS, wx.NORMAL, wx.NORMAL))
-	dc.SetTextForeground(wx.Colour(0xFF, 0x20, 0xFF))
-	te = dc.GetTextExtent("Hello World")
-	dc.DrawText("Hello World", 60, 65)
-
-	dc.SetPen(wx.Pen('VIOLET', 4))
-	dc.DrawLine(5, 65+te[1], 60+te[0], 65+te[1])
-
-	lst = [(100,110), (150,110), (150,160), (100,160)]
-	dc.DrawLines(lst, -60)
-	dc.SetPen(wx.GREY_PEN)
-	dc.DrawPolygon(lst, 75)
-	dc.SetPen(wx.GREEN_PEN)
-	dc.DrawSpline(lst+[(100,100)])
-
-	dc.DrawBitmap(self.bmp, 200, 20, True)
-	dc.SetTextForeground(wx.Colour(0, 0xFF, 0x80))
-	dc.DrawText("a bitmap", 200, 85)
+	#dc.SetBrush(wx.LIGHT_GREY_BRUSH)
+	#dc.SetPen(wx.Pen('BLUE', 4))
+	#dc.DrawRectangle(15, 15, 50, 50)
 
 	#dc.SetFont(wx.Font(14, wx.SWISS, wx.NORMAL, wx.NORMAL))
-	#dc.SetTextForeground("BLACK")
-	#dc.DrawText("TEST this STRING", 10, 200)
-	#print dc.GetFullTextExtent("TEST this STRING")
+	#dc.SetTextForeground(wx.Colour(0xFF, 0x20, 0xFF))
+	#te = dc.GetTextExtent("Hello World")
+	#dc.DrawText("Hello World", 60, 65)
 
-	font = wx.Font(20, wx.SWISS, wx.NORMAL, wx.NORMAL)
-	dc.SetFont(font)
-	dc.SetTextForeground(wx.BLACK)
+	#dc.SetPen(wx.Pen('VIOLET', 4))
+	#dc.DrawLine(5, 65+te[1], 60+te[0], 65+te[1])
 
-	for a in range(0, 360, 45):
-	    dc.DrawRotatedText("Rotated text...", 300, 300, a)
+	#lst = [(100,110), (150,110), (150,160), (100,160)]
+	#dc.DrawLines(lst, -60)
+	#dc.SetPen(wx.GREY_PEN)
+	#dc.DrawPolygon(lst, 75)
+	#dc.SetPen(wx.GREEN_PEN)
+	#dc.DrawSpline(lst+[(100,100)])
 
-	dc.SetPen(wx.TRANSPARENT_PEN)
-	dc.SetBrush(wx.BLUE_BRUSH)
-	dc.DrawRectangle(50,500, 50,50)
-	dc.DrawRectangle(100,500, 50,50)
+	dc.DrawBitmap(self.bmp, 0, 0, False)
+	#dc.SetTextForeground(wx.Colour(0, 0xFF, 0x80))
+	#dc.DrawText("a bitmap", 200, 85)
 
-	dc.SetPen(wx.Pen('RED'))
-	dc.DrawEllipticArc(200,500, 50,75, 0, 90)
+	###dc.SetFont(wx.Font(14, wx.SWISS, wx.NORMAL, wx.NORMAL))
+	###dc.SetTextForeground("BLACK")
+	###dc.DrawText("TEST this STRING", 10, 200)
+	###print dc.GetFullTextExtent("TEST this STRING")
 
-	if not printing:
-	    # This has troubles when used on a print preview in wxGTK,
-	    # probably something to do with the pen styles and the scaling
-	    # it does...
-	    y = 20
+	#font = wx.Font(20, wx.SWISS, wx.NORMAL, wx.NORMAL)
+	#dc.SetFont(font)
+	#dc.SetTextForeground(wx.BLACK)
 
-	    for style in [wx.DOT, wx.LONG_DASH, wx.SHORT_DASH, wx.DOT_DASH, wx.USER_DASH]:
-		pen = wx.Pen("DARK ORCHID", 1, style)
-		if style == wx.USER_DASH:
-		    pen.SetCap(wx.CAP_BUTT)
-		    pen.SetDashes([1,2])
-		    pen.SetColour("RED")
-		dc.SetPen(pen)
-		dc.DrawLine(300,y, 400,y)
-		y = y + 10
+	#for a in range(0, 360, 45):
+	    #dc.DrawRotatedText("Rotated text...", 300, 300, a)
 
-	dc.SetBrush(wx.TRANSPARENT_BRUSH)
-	dc.SetPen(wx.Pen(wx.Colour(0xFF, 0x20, 0xFF), 1, wx.SOLID))
-	dc.DrawRectangle(450,50,  100,100)
-	old_pen = dc.GetPen()
-	new_pen = wx.Pen("BLACK", 5)
-	dc.SetPen(new_pen)
-	dc.DrawRectangle(470,70,  60,60)
-	dc.SetPen(old_pen)
-	dc.DrawRectangle(490,90, 20,20)
+	#dc.SetPen(wx.TRANSPARENT_PEN)
+	#dc.SetBrush(wx.BLUE_BRUSH)
+	#dc.DrawRectangle(50,500, 50,50)
+	#dc.DrawRectangle(100,500, 50,50)
 
-	dc.GradientFillLinear((20, 260, 50, 50),
-                              "red", "blue")
-	dc.GradientFillConcentric((20, 325, 50, 50),
-                                  "red", "blue", (25,25))
-	self.DrawSavedLines(dc)
+	#dc.SetPen(wx.Pen('RED'))
+	#dc.DrawEllipticArc(200,500, 50,75, 0, 90)
+
+	#if not printing:
+	    ## This has troubles when used on a print preview in wxGTK,
+	    ## probably something to do with the pen styles and the scaling
+	    ## it does...
+	    #y = 20
+
+	    #for style in [wx.DOT, wx.LONG_DASH, wx.SHORT_DASH, wx.DOT_DASH, wx.USER_DASH]:
+		#pen = wx.Pen("DARK ORCHID", 1, style)
+		#if style == wx.USER_DASH:
+		    #pen.SetCap(wx.CAP_BUTT)
+		    #pen.SetDashes([1,2])
+		    #pen.SetColour("RED")
+		#dc.SetPen(pen)
+		#dc.DrawLine(300,y, 400,y)
+		#y = y + 10
+
+	#dc.SetBrush(wx.TRANSPARENT_BRUSH)
+	#dc.SetPen(wx.Pen(wx.Colour(0xFF, 0x20, 0xFF), 1, wx.SOLID))
+	#dc.DrawRectangle(450,50,  100,100)
+	#old_pen = dc.GetPen()
+	#new_pen = wx.Pen("BLACK", 5)
+	#dc.SetPen(new_pen)
+	#dc.DrawRectangle(470,70,  60,60)
+	#dc.SetPen(old_pen)
+	#dc.DrawRectangle(490,90, 20,20)
+
+	#dc.GradientFillLinear((20, 260, 50, 50),
+                              #"red", "blue")
+	#dc.GradientFillConcentric((20, 325, 50, 50),
+                                  #"red", "blue", (25,25))
+	#self.DrawSavedLines(dc)
 	#dc.EndDrawing()
 
 		    
     
+    def SetColumns(self, columns):
+	'''
+	Updates the number of columns that should be displayed on the canvas
+	(DC)
+	@param columns
+	         int (1-128)
+	'''
+	self.columns = columns
+	# Todo Redraw canvas
+	
+    def GetColumns(self):
+	return self.columns
+	
     def UpateBuffer(self, encodingStr):
 	pass
     
     def DrawTile(self):
 	pass
-			    
-		    
-    def DrawSavedLines(self, dc):
-	dc.SetPen(wx.Pen('MEDIUM FOREST GREEN', 4))
-
-	for line in self.lines:
-	    for coords in line:
-		apply(dc.DrawLine, coords)
-
 
     def SetXY(self, event):
 	self.x, self.y = self.ConvertEventCoords(event)
