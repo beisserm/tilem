@@ -9,7 +9,7 @@ from dialogs.canvasSizeDialog import CanvasSizeDialog
 from ToolPanel import ToolPanel
 from cubecolourdialog import CubeColourDialog
 
-import  wx
+import wx
 
 #MDI child windows...
 import canvas
@@ -282,6 +282,9 @@ ID_FullCanvasBlockSizeMenuItem = wx.NewId()
 ID_CustomBlockSizeMenuItem = wx.NewId()
 ID_RowInterleaveBlocksMenuItem = wx.NewId()
 ID_BlockGridMenuItem = wx.NewId()
+ID_CanvasSizeMenuItem = wx.NewId()
+ID_SelectionSizeMenuItem = wx.NewId()
+ID_TileSizeMenuItem = wx.NewId()
 ID_TileGridMenuItem = wx.NewId()
 ID_PixelGridMenuItem = wx.NewId()
 
@@ -290,8 +293,6 @@ ID_FlipHorizontalMenuItem = wx.NewId()
 ID_FlipVerticalMenuItem = wx.NewId()
 ID_RotateClockwiseMenuItem = wx.NewId()
 ID_RotateCounterClockwiseMenuItem = wx.NewId()
-ID_CanvasSizeMenuItem = wx.NewId()
-ID_SelectionSizeMenuItem = wx.NewId()
 
 # Navigate Menu Ids
 ID_GotoAddressMenuItem = wx.NewId()
@@ -512,13 +513,28 @@ class TilemFrame(wx.MDIParentFrame):
 	blockSizeMenu.AppendItem(fullCanvasMenuItem)
 	customCanvasMenuItem = wx.MenuItem(blockSizeMenu, ID_CustomBlockSizeMenuItem, "Custom", "", wx.ITEM_RADIO)
 	blockSizeMenu.AppendItem(customCanvasMenuItem)
-	#self.Bind(wx.EVT_MENU, self., )
+	#self.Bind(wx.EVT_MENU, self.OnBlockSize, fullCanvasMenuItem)
+	self.Bind(wx.EVT_MENU, self.OnBlockSize, customCanvasMenuItem)
 	viewMenu.AppendMenu(-1, "Block Size", blockSizeMenu)
 
 	rowInterleavedBlocksMenuItem = wx.MenuItem(viewMenu, ID_RowInterleaveBlocksMenuItem, "Row-interleave Blocks", "", wx.ITEM_CHECK)
 	viewMenu.AppendItem(rowInterleavedBlocksMenuItem)
 	self.Bind(wx.EVT_MENU, self.OnRowInterleaveBlocks, rowInterleavedBlocksMenuItem)
+	
+	viewMenu.AppendSeparator()
 
+	canvasSizeMenuItem = wx.MenuItem(viewMenu, ID_CanvasSizeMenuItem, "Canvas Size...", "", wx.ITEM_NORMAL)
+	viewMenu.AppendItem(canvasSizeMenuItem)
+	self.Bind(wx.EVT_MENU, self.OnCanvasSize, canvasSizeMenuItem)
+
+	tileSizeMenuItem = wx.MenuItem(viewMenu, ID_TileSizeMenuItem, "Tile Size...", "", wx.ITEM_NORMAL)
+	viewMenu.AppendItem(tileSizeMenuItem)
+	self.Bind(wx.EVT_MENU, self.OnTileSize, tileSizeMenuItem)	
+
+	selectionSizeMenuItem = wx.MenuItem(viewMenu, ID_SelectionSizeMenuItem, "Selection Size...", "", wx.ITEM_NORMAL)
+	viewMenu.AppendItem(selectionSizeMenuItem)
+	self.Bind(wx.EVT_MENU, self.OnSelectionSize, selectionSizeMenuItem)		
+	
 	viewMenu.AppendSeparator()
 
 	blockGridMenuItem = wx.MenuItem(modeMenu, ID_BlockGridMenuItem, "Block Grid", "", wx.ITEM_CHECK)
@@ -562,16 +578,6 @@ class TilemFrame(wx.MDIParentFrame):
 	rotateLeftMenuItem.SetBitmap(wx.Bitmap("icons/rotate-left-16.png", wx.BITMAP_TYPE_PNG))
 	imageMenu.AppendItem(rotateLeftMenuItem)
 	self.Bind(wx.EVT_MENU, self.OnRotateCounterClockwise, rotateLeftMenuItem)
-
-	imageMenu.AppendSeparator()
-
-	canvasSizeMenuItem = wx.MenuItem(imageMenu, ID_CanvasSizeMenuItem, "Canvas Size...", "", wx.ITEM_NORMAL)
-	imageMenu.AppendItem(canvasSizeMenuItem)
-	self.Bind(wx.EVT_MENU, self.OnCanvasSize, canvasSizeMenuItem)
-
-	selectionSizeMenuItem = wx.MenuItem(imageMenu, ID_SelectionSizeMenuItem, "Selection Size...", "", wx.ITEM_NORMAL)
-	imageMenu.AppendItem(selectionSizeMenuItem)
-	self.Bind(wx.EVT_MENU, self.OnSelectionSize, selectionSizeMenuItem)
 
 	return imageMenu
 
@@ -705,6 +711,26 @@ class TilemFrame(wx.MDIParentFrame):
     def OnRowInterleaveBlocks(self, evt):
 	print "OnRowInterleaveBlocks"
 
+    def OnCanvasSize(self, evt):
+	activeWindow = self.GetActiveChild()
+	print activeWindow
+	
+	if activeWindow != None:
+	    currentColumns = activeWindow.GetCanvasColumns()
+	    dlg = CanvasSizeDialog(self, currentColumns)
+
+	    if dlg.ShowModal() == wx.ID_OK:
+		newColumns = dlg.GetColumns()
+		activeWindow.SetCanvasColumns(newColumns)
+		
+	    dlg.Destroy()
+
+    def OnSelectionSize(self, evt):
+	print "OnSelectionSize"	
+	
+    def OnTileSize(self, evt):
+	print "OnTileSize"
+	
     def OnShowBlockGrid(self, evt):
 	print "OnShowBlockGrid"
 
@@ -735,22 +761,6 @@ class TilemFrame(wx.MDIParentFrame):
 
     def OnRotateCounterClockwise(self, evt):
 	print "OnRotateCounterClockwise"
-
-    def OnCanvasSize(self, evt):
-	activeWindow = self.GetActiveChild()
-	
-	if activeWindow != None:
-	    currentColumns = activeWindow.GetCanvasColumns()
-	    dlg = CanvasSizeDialog(self, currentColumns)
-
-	    if dlg.ShowModal() == wx.ID_OK:
-		newColumns = dlg.GetColumns()
-		activeWindow.SetCanvasColumns(newColumns)
-		
-	    dlg.Destroy()
-
-    def OnSelectionSize(self, evt):
-	print "OnSelectionSize"
 
 #Navigate
     def OnGoto(self, evt):

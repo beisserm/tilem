@@ -2,19 +2,15 @@ import wx
 import images
 import os
 import stat
-import threading
+
 import numpy
 import math
 
-from dialogs.processFileDialog import ProcessFileDialog
-
-
-
-from utils.bitbuffer import BitBuffer
 from utils.enthoughtSizer import FlowSizer
 
 # Standard 'pixel' size is 8x8
 PIXEL_ZOOM = 8
+RGB_LENGTH = 3
 zoomSelections = ['50%', '75%', '100%', '125%', '150%', '175%', '200%', '400%', '600%', '800%']
 zoomMapping = { '50%':(4, 4),    '75%':(6, 6),   '100%':(8, 8),   '125%':(10, 10), '150%':(12, 12), 
                '175%':(14, 14), '200%':(16, 16), '400%':(32, 32), '600%':(48,48),  '800%':(64, 64)}
@@ -108,7 +104,13 @@ class ScrolledCanvas(wx.ScrolledWindow):
 
 	# filesize in bytes
 	self.fileSize = None
+	
 	self.columns = 16
+	
+	# This is in 'logical units', that is the desired tile size is w x h.
+	# The actual size on the screen is dependant on the zoom level
+	self.tileWidth = 8
+	self.tileHeight = 8
 	
 	# The working copy of the pixels in our current bitmap, adjusted for 
 	# the current bpp. Visually, the array is stored in 3D (x, y, z) with
@@ -143,27 +145,28 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	if fileStr:
 	    try:
 		self.fileHandle = open(fileStr, 'rb')
-		
-		
+				
 		fileStats = os.stat(fileStr)
 		self.fileSize = fileStats[stat.ST_SIZE]
 		#self.testImg = wx.Bitmap(fileStr, wx.BITMAP_TYPE_BMP)
-		#self.buff = '                                                                                                                   '
 		#print str(self.buff)
 		#self.testImg.CopyToBuffer(self.buff, wx.BitmapBufferFormat_RGB32)
 		#print map(ord, self.buff)
-		#print '##########'
 		
 		# Read a file one byte per element into a column array. We read
-		# it little endian, (left most bit being the LSB).
+		# it little endian, (right most bit being the LSB).
 		self.bytesArray = numpy.fromfile(self.fileHandle, dtype=numpy.uint8)
 		#print self.bytesArray
-		self.bmp = self.CreateIndexedBitmap(self.bytesArray, 8, 8)
+		self.bmp = self.CreateIndexedBitmap(self.bytesArray)
 	    except IOError:
 		print 'Unable to open file: ', fileStr
 	else:
 	    #Todo: Change to actual filesize
-	    self.pixels = numpy.zeros(shape=(1,1))
+	    empty = numpy.zeros(shape=(1,1), dtype=numpy.uint8)
+	    bmp = wx.EmptyBitmap(1, 1, 24)
+	    image = bmp.ConvertToImage()
+	    image.Rescale(1 * 8, 1 * 8)
+	    self.bmp = image.ConvertToBitmap()	    
 
 	self.lines = []	
 
@@ -197,9 +200,8 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	self.Bind(wx.EVT_MOTION, self.OnLeftButtonEvent)
 	self.Bind(wx.EVT_PAINT, self.OnPaint)
 
-
 	
-    def CreateIndexedBitmap(self, npArray, width=8, height=8, bpp=8):
+    def CreateIndexedBitmap(self, npArray, bpp=8):
 	"""
 	Creates a bitmap image of the specified size from a numpy array. Each 
 	entry in the array is assumed to be the index into the palette of the
@@ -265,11 +267,12 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	# Get the actual entry then lookup the entry in the palette table
 	#rgbArray = numpy.fromfunction(wtf, size)
 	self.paletteColors = self.GetParent().GetParent().GetPalette()
+		
+	#numTiles = math.ceil(self.fileSize / self.tileHeight / self.tileWidth)
+	drawingWidth = self.columns * PIXEL_ZOOM
+	drawingHeight = math.ceil(self.fileSize / drawingWidth)
 	
-	width = 2
-	height = 19	
-	
-	# This is terribly slow, fix me: numpy.fomfunction(lambda , shape)
+	# This is terribly slow, fix me: numpy.fromfunction(lambda , shape)
 	rgbArray = list(map(lambda x: self.paletteColors[x], reversedOrder))
 	rgbArray2 = numpy.array(rgbArray, dtype=numpy.uint8).reshape(width, height, 3)
 	rgbArray2 = rgbArray2.reshape(width, height, 3)
@@ -282,7 +285,6 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	bmp = image.ConvertToBitmap()
 	
 	return bmp
-
 
     def ChangeIndexedImageBpp(self, bpp=1):
 	pass
@@ -327,7 +329,6 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	    #self.DoDrawing(dc)
 	    #parent.toolBar.Raise()
 
-
     def DoDrawing(self, dc):
 	#dc.BeginDrawing()
 
@@ -338,36 +339,10 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	#dc.SetPen(wx.Pen('BLUE', 4))
 	#dc.DrawRectangle(15, 15, 50, 50)
 
-	#dc.SetFont(wx.Font(14, wx.SWISS, wx.NORMAL, wx.NORMAL))
-	#dc.SetTextForeground(wx.Colour(0xFF, 0x20, 0xFF))
-	#te = dc.GetTextExtent("Hello World")
-	#dc.DrawText("Hello World", 60, 65)
-
-	#dc.SetPen(wx.Pen('VIOLET', 4))
-	#dc.DrawLine(5, 65+te[1], 60+te[0], 65+te[1])
-
-	#lst = [(100,110), (150,110), (150,160), (100,160)]
-	#dc.DrawLines(lst, -60)
-	#dc.SetPen(wx.GREY_PEN)
-	#dc.DrawPolygon(lst, 75)
 	#dc.SetPen(wx.GREEN_PEN)
 	#dc.DrawSpline(lst+[(100,100)])
 
 	dc.DrawBitmap(self.bmp, 0, 0, False)
-	#dc.SetTextForeground(wx.Colour(0, 0xFF, 0x80))
-	#dc.DrawText("a bitmap", 200, 85)
-
-	###dc.SetFont(wx.Font(14, wx.SWISS, wx.NORMAL, wx.NORMAL))
-	###dc.SetTextForeground("BLACK")
-	###dc.DrawText("TEST this STRING", 10, 200)
-	###print dc.GetFullTextExtent("TEST this STRING")
-
-	#font = wx.Font(20, wx.SWISS, wx.NORMAL, wx.NORMAL)
-	#dc.SetFont(font)
-	#dc.SetTextForeground(wx.BLACK)
-
-	#for a in range(0, 360, 45):
-	    #dc.DrawRotatedText("Rotated text...", 300, 300, a)
 
 	#dc.SetPen(wx.TRANSPARENT_PEN)
 	#dc.SetBrush(wx.BLUE_BRUSH)
@@ -409,8 +384,6 @@ class ScrolledCanvas(wx.ScrolledWindow):
                                   #"red", "blue", (25,25))
 	#self.DrawSavedLines(dc)
 	#dc.EndDrawing()
-
-		    
     
     def SetColumns(self, columns):
 	'''
@@ -421,6 +394,14 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	'''
 	self.columns = columns
 	# Todo Redraw canvas
+    
+    def SetFileSize(self, byteSize=1):
+	'''
+	Sets the filesize. Only used when making a 'New' File.
+	@param byteSize
+	         Size of file in bytes
+	'''
+	self.fileSize = byteSize
 	
     def GetColumns(self):
 	return self.columns
