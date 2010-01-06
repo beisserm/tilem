@@ -1,8 +1,5 @@
 import wx
 
-def create(parent):
-	return GotoDialog(parent)
-
 [wxID_GOTODIALOG, wxID_ADDRESS_STATIC_BOX,
  wxID_ADDRESS_TEXTBOX, wxID_CANCEL_BUTTON,
  wxID_OFFSET_RADIO_BOX, wxID_OKBUTTON,
@@ -11,14 +8,7 @@ def create(parent):
 
 class GotoDialog(wx.Dialog):
 
-	def __init__(self, parent):
-		self._init_ctrls(parent)
-
-	def _init_sizers(self):
-		# generated method, don't edit
-		self.flexGridSizer2 = wx.FlexGridSizer(cols=0, hgap=0, rows=1, vgap=0)
-
-	def _init_ctrls(self, prnt):
+	def __init__(self, prnt):
 		# generated method, don't edit
 		wx.Dialog.__init__(self, id=wxID_GOTODIALOG, name='GotoDialog',
 			  parent=prnt, pos=wx.Point(453, 244), size=wx.Size(380, 182),
@@ -30,13 +20,13 @@ class GotoDialog(wx.Dialog):
 		self.SetToolTipString('')
 		self.SetMinSize(wx.Size(100, 50))
 
-		self.CancelButton = wx.Button(id=wxID_CANCEL_BUTTON,
+		self.CancelButton = wx.Button(id=wx.ID_CANCEL,
 			  label='Cancel', name='CancelButton', parent=self,
 			  pos=wx.Point(200, 112), size=wx.Size(75, 23), style=0)
-		self.CancelButton.SetToolTipString('')
-		self.CancelButton.SetHelpText('')
-#		self.CancelButton.Bind(wx.EVT_BUTTON, self.OnCancel,
-#			  id=wxID_CANCEL_BUTTON)
+		
+		self.OKButton = wx.Button(id=wx.ID_OK, label='OK',
+			  name='OKButton', parent=self, pos=wx.Point(112, 112),
+			  size=wx.Size(75, 23), style=0)
 
 		self.AddressTextBox = wx.TextCtrl(id=wxID_ADDRESS_TEXTBOX,
 			  name='AddressTextBox', parent=self, pos=wx.Point(16, 48),
@@ -61,28 +51,13 @@ class GotoDialog(wx.Dialog):
 		self.OffsetRadioBox.Bind(wx.EVT_RADIOBOX, self.OnOffsetSelection,
 			  id=wxID_OFFSET_RADIO_BOX)
 
-		self.OKButton = wx.Button(id=int(wx.ID_OK), label='OK',
-			  name='OKButton', parent=self, pos=wx.Point(112, 112),
-			  size=wx.Size(75, 23), style=0)
-		self.OKButton.SetAutoLayout(False)
-		self.OKButton.SetToolTipString('')
-#		self.OKButton.Bind(wx.EVT_BUTTON, self.OnOK,
-#			  id=wxID_OKBUTTON)
-
 		self.AddressStaticBox = wx.StaticBox(id=wxID_ADDRESS_STATIC_BOX,
 			  label='Address', name='AddressStaticBox', parent=self,
 			  pos=wx.Point(8, 24), size=wx.Size(128, 64), style=0)
 		self.AddressStaticBox.SetToolTipString('Address')
 		self.AddressStaticBox.SetWindowVariant(wx.WINDOW_VARIANT_NORMAL)
 
-		self._init_sizers()
-
-#	def OnOK(self, event):
-#            print 'ok'
-#
-#	def OnCancel(self, event):
-#            print 'cancel???'
-#            self.Destroy()
+		self.flexGridSizer2 = wx.FlexGridSizer(cols=0, hgap=0, rows=1, vgap=0)
 
 	def OnOffsetSelection(self, event):
 		index = self.OffsetRadioBox.GetSelection()

@@ -6,6 +6,7 @@ __date__ ="$Oct 16, 2009 6:33:40 PM$"
 
 from dialogs.gotoAddressDialog import GotoDialog
 from dialogs.canvasSizeDialog import CanvasSizeDialog
+from dialogs.newFileDialog import NewFileDialog
 from ToolPanel import ToolPanel
 from cubecolourdialog import CubeColourDialog
 
@@ -636,13 +637,17 @@ class TilemFrame(wx.MDIParentFrame):
 
 #File Menu Events
     def OnNew(self, evt):
-	win = canvas.CanvasFrame(self)
-	#win = ScrolledWindow
-	#win = wx.MDIChildFrame(self, -1, "File: %d" % self.winCount)
-	#canvas = ScrolledWindow.MyCanvas(win)
-	#win.Show(True)
-	self.winCount = self.winCount + 1
-
+	'''
+	Handles the 'New File' menu option. This may go away in the future
+	'''
+	newFileDlg = NewFileDialog(self)
+	if newFileDlg.ShowModal() == wx.ID_OK:
+	    size = newFileDlg.GetSize()
+	    win = canvas.CanvasFrame(self, fileSize=size)
+	    win.Show(True)
+	    self.winCount = self.winCount + 1
+	
+	newFileDlg.Destroy()
 
     def OnOpen(self, evt):
 	openDialog = wx.FileDialog(self, "Choose a file", "", "", romFileTypes, wx.OPEN )
@@ -652,7 +657,6 @@ class TilemFrame(wx.MDIParentFrame):
 		win = canvas.CanvasFrame(self, fileStr=selectedFile)
 		win.Show(True)
 		self.winCount = self.winCount + 1
-		
 	    except IOError:
 		pass
 	    

@@ -10,7 +10,6 @@ from utils.enthoughtSizer import FlowSizer
 
 # Standard 'pixel' size is 8x8
 PIXEL_ZOOM = 8
-RGB_LENGTH = 3
 zoomSelections = ['50%', '75%', '100%', '125%', '150%', '175%', '200%', '400%', '600%', '800%']
 zoomMapping = { '50%':(4, 4),    '75%':(6, 6),   '100%':(8, 8),   '125%':(10, 10), '150%':(12, 12), 
                '175%':(14, 14), '200%':(16, 16), '400%':(32, 32), '600%':(48,48),  '800%':(64, 64)}
@@ -36,7 +35,16 @@ class CanvasFrame(wx.MDIChildFrame):
     A simple frame that has a drawing area and its own toolbar
     TODO: Use a sizer for comboBoxes, add buttons?
     """
-    def __init__(self, prnt, fileStr=None): 
+    def __init__(self, prnt, fileStr=None, fileSize=None):
+	'''
+	Constructor
+	@param fileStr
+	         The name of the file to open. Only used when opening an
+		 existing file.
+	@param fileSize
+		 The size (in bytes) of a new file to create. Only used when
+		 creating a new file.
+	'''
 	wx.MDIChildFrame.__init__(self, parent=prnt)
 
 	vbox = wx.BoxSizer(wx.VERTICAL)
@@ -59,7 +67,7 @@ class CanvasFrame(wx.MDIChildFrame):
 	self.toolBar.Realize()		
 	self.toolBar.Raise()
 
-	self.canvas = ScrolledCanvas(self, fileStr=fileStr)	
+	self.canvas = ScrolledCanvas(self, fileStr=fileStr, fileSize=fileSize)	
 
 	vbox.Add(self.canvas, 1, wx.EXPAND)		
 	vbox.Add(self.toolBar, 0, wx.EXPAND)
@@ -95,22 +103,23 @@ class CanvasFrame(wx.MDIChildFrame):
 #double a[2][4] = { { 1, 2, 3, 4 },
 #                   { 5, 6, 7, 8 } };
 
+RGB_LENGTH = 3
 class ScrolledCanvas(wx.ScrolledWindow):	
     """
 
     """	
-    def __init__(self, parent, id = -1, size = wx.DefaultSize, fileStr = None):
+    def __init__(self, parent, id = -1, size = wx.DefaultSize, fileStr = None, fileSize=None):
 	wx.ScrolledWindow.__init__(self, parent, id, (0, 0), size=size, style=wx.SUNKEN_BORDER)	
 
 	# filesize in bytes
-	self.fileSize = None
+	self.fileSize = fileSize
 	
 	self.columns = 16
 	
 	# This is in 'logical units', that is the desired tile size is w x h.
 	# The actual size on the screen is dependant on the zoom level
-	self.tileWidth = 8
-	self.tileHeight = 8
+	self.tileWidth = 3
+	self.tileHeight = 3
 	
 	# The working copy of the pixels in our current bitmap, adjusted for 
 	# the current bpp. Visually, the array is stored in 3D (x, y, z) with
@@ -163,6 +172,9 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	else:
 	    #Todo: Change to actual filesize
 	    empty = numpy.zeros(shape=(1,1), dtype=numpy.uint8)
+	    rgbArray2 = numpy.array(rgbArray, dtype=numpy.uint8).reshape(width, height, 3)
+	    bmp = wx.EmptyBitmap(width, height, 24)
+	    bmp.CopyFromBuffer(rgbArray2.tostring(), wx.BitmapBufferFormat_RGB)	    
 	    bmp = wx.EmptyBitmap(1, 1, 24)
 	    image = bmp.ConvertToImage()
 	    image.Rescale(1 * 8, 1 * 8)
@@ -232,14 +244,9 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	
 	@param npArray
 	         A numpy byte array of the file
-	@param width (int)
-	         The width of the desired bitmap in pixels
-	@param height (int)
-	         The height of the desired bitmaps in pixels
 	@param bpp (int)
 	         The desired bpp's of the bitmap
 	""" 
-	# 
 	# Create column vector of bytes, so when we unpack a byte we will have 
 	# a nice (n x 8) vector to work with where each element is a single 
 	# bit. This allows us to decode arbitrary bits per pixel by 
@@ -261,27 +268,36 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	elif bpp == 8:
 	    shiftedBits = reversedOrder
 	
-	def wtf(x,y):
-	    self.paletteColors[int(x),int(y)]
-	
 	# Get the actual entry then lookup the entry in the palette table
 	#rgbArray = numpy.fromfunction(wtf, size)
 	self.paletteColors = self.GetParent().GetParent().GetPalette()
-		
-	#numTiles = math.ceil(self.fileSize / self.tileHeight / self.tileWidth)
-	drawingWidth = self.columns * PIXEL_ZOOM
-	drawingHeight = math.ceil(self.fileSize / drawingWidth)
-	
+
 	# This is terribly slow, fix me: numpy.fromfunction(lambda , shape)
+	# Copy the corresponding color entry into a new array	
 	rgbArray = list(map(lambda x: self.paletteColors[x], reversedOrder))
-	rgbArray2 = numpy.array(rgbArray, dtype=numpy.uint8).reshape(width, height, 3)
-	rgbArray2 = rgbArray2.reshape(width, height, 3)
 	
-	# TODO: Break up into tiles of w x h
-	bmp = wx.EmptyBitmap(width, height, 24)
-	bmp.CopyFromBuffer(rgbArray2.tostring(), wx.BitmapBufferFormat_RGB)
+	logicalSize = self._calcLogicalBmpSize() # width, height
+
+	#rgbArray2[i, j, 0] is the red component of the i, j pixel
+	#rgbArray2[i, j, 1] is the green component of the i, j pixel
+	#rgbArray2[i, j, 2] is the blue component of the i, j pixel
+	rgbArray2 = numpy.array(rgbArray, dtype=numpy.uint8).reshape(logicalSize[0], logicalSize[1], 3)
+
+	bmp = wx.EmptyBitmap(logicalSize[0], logicalSize[1], 24)
+	temp = numpy.array_split(rgbArray2, self._calcTiles())
+	ordered = numpy.hstack(list(temp)).reshape(logicalSize[0], logicalSize[1], 3)
+	
+	bmp.CopyFromBuffer(ordered.tostring(), wx.BitmapBufferFormat_RGB)
+
+	#bmp = ordered.reshape(logicalSize[0], logicalSize[1], 3)
+	#foo = numpy.arange(128).reshape(16,8)
+	#temp = numpy.array_split(foo, 2)
+	#correct = numpy.hstack((temp[0], temp[1]))
+	#correct.flatten()
+	#correct.reshape(16,8)
+	
         image = bmp.ConvertToImage()
-        image.Rescale(width * 8, height * 8)
+        image.Rescale(logicalSize[0] * 8, logicalSize[1] * 8)
 	bmp = image.ConvertToBitmap()
 	
 	return bmp
@@ -464,6 +480,49 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	    self.ReleaseMouse()
 	    self.drawing = False
 
+#####
+# Private Methods
+#####
+
+    def _calcLogicalBmpSize(self):
+	'''
+	Figures out the logical size of the bitmap to be displayed 
+	(that is not adjusted for zoom/displaying purposes)
+	@return Tuple containing the (width, height) of the bitmap to be
+	        displayed
+	'''
+	# Just some initial values that make sense (1 tile)
+	logicalBmpWidth = 8
+	logicalBmpHeight = 8
+	
+	# Do we have less than 1 row of tiles?
+	if self._calcTiles() < self.columns:
+	    logicalBmpWidth = self.tileWidth * self._calcTiles()
+	    logicalBmpHeight = self.tileHeight
+	else:	
+	    logicalBmpWidth = self.tileWidth * self.columns
+	    logicalBmpHeight = self.fileSize / self.tileWidth # total / width = height
+	    
+	return (logicalBmpWidth, logicalBmpHeight)
+    
+    def _calcTiles(self):
+	logicalTileSize = self.tileWidth * self.tileHeight
+	
+	# Do we have any partial tiles?
+	if (self.fileSize % logicalTileSize) == 0:
+	    return math.floor(self.fileSize // logicalTileSize)   
+	else:
+	    return math.floor(self.fileSize // logicalTileSize) + 1
+	
+    def _createTiles(self):
+	'''
+	foo = numpy.arange(128).reshape(16,8)
+	temp = numpy.array_split(foo, 2)
+	correct = numpy.hstack((temp[0], temp[1]))
+	correct.flatten()
+	correct.reshape(16,8)	
+	'''
+	pass
 
 # This is an example of what to do for the EVT_MOUSEWHEEL event,
 # but since wx.ScrolledWindow does this already it's not

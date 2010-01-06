@@ -53,25 +53,25 @@ class NewPaletteDialog(wx.Dialog):
               id=wxID_NEWPALETTEDIALOGCOMBOBOX1, name='colorEncoding', parent=self,
               pos=wx.Point(64, 64), size=wx.Size(130, 21), style=wx.CB_READONLY, value='colorEncoding')
 
-        self.OkButton = wx.Button(id=ID_OkButton, label='OK',
+        self.OkButton = wx.Button(id=wx.ID_OK, label='OK',
               name='OkButton', parent=self, pos=wx.Point(48, 112),
               size=wx.Size(75, 23), style=0)
-        self.OkButton.Bind(wx.EVT_BUTTON, self.OnOk, id=ID_OkButton)
+        #self.OkButton.Bind(wx.EVT_BUTTON, self.OnOk, id=ID_OkButton)
 
-        self.CancelButton = wx.Button(id=ID_CancelButton,
+        self.CancelButton = wx.Button(id=wx.ID_CANCEL,
               label='Cancel', name='CancelButton', parent=self,
               pos=wx.Point(144, 112), size=wx.Size(75, 23), style=0)
-        self.CancelButton.Bind(wx.EVT_BUTTON, self.OnCancel,
-              id=ID_CancelButton)   
+        #self.CancelButton.Bind(wx.EVT_BUTTON, self.OnCancel,
+              #id=ID_CancelButton)   
 
     def __init__(self, parent):
         self._init_ctrls(parent)
         
-    def OnOk(self, event):
-        self.EndModal(wx.ID_OK)
+    #def OnOk(self, event):
+        #self.EndModal(wx.ID_OK)
         
-    def OnCancel(self, event):
-        self.EndModal(wx.ID_CANCEL)
+    #def OnCancel(self, event):
+        #self.EndModal(wx.ID_CANCEL)
 
     def GetSize(self):
         ''' 
