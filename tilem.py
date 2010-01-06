@@ -11,6 +11,7 @@ from ToolPanel import ToolPanel
 from cubecolourdialog import CubeColourDialog
 
 import wx
+import numpy
 
 #MDI child windows...
 import canvas

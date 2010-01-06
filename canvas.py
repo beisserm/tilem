@@ -2,6 +2,7 @@ import wx
 import images
 import os
 import stat
+import time
 
 import numpy
 import math
@@ -213,7 +214,7 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	self.Bind(wx.EVT_PAINT, self.OnPaint)
 
 	
-    def CreateIndexedBitmap(self, npArray, bpp=8):
+    def CreateIndexedBitmap(self, npArray, bpp=1):
 	"""
 	Creates a bitmap image of the specified size from a numpy array. Each 
 	entry in the array is assumed to be the index into the palette of the
@@ -254,27 +255,41 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	# pixel	
 	tempBits = numpy.unpackbits(npArray)
 	tempBits2 = numpy.reshape(tempBits, (math.ceil(tempBits.size / bpp), bpp))
-	reversedOrder = numpy.packbits(tempBits2, axis=-1)
+	tempBits = numpy.packbits(tempBits2, axis=-1)
 	shiftedBits = None
 	
 	if bpp == 1:
-	    shiftedBits = numpy.right_shift(reversedOrder, 7)
+	    shiftedBits = numpy.right_shift(tempBits, 7)
 	elif bpp == 2:
-	    shiftedBits = numpy.right_shift(reversedOrder, 6)
+	    shiftedBits = numpy.right_shift(tempBits, 6)
 	elif bpp == 3:
-	    shiftedBits = numpy.right_shift(reversedOrder, 5)
+	    shiftedBits = numpy.right_shift(tempBits, 5)
 	elif bpp == 4:
-	    shiftedBits = numpy.right_shift(reversedOrder, 4)
+	    shiftedBits = numpy.right_shift(tempBits, 4)
 	elif bpp == 8:
-	    shiftedBits = reversedOrder
+	    shiftedBits = tempBits
 	
 	# Get the actual entry then lookup the entry in the palette table
 	#rgbArray = numpy.fromfunction(wtf, size)
 	self.paletteColors = self.GetParent().GetParent().GetPalette()
+	revShape = tempBits.shape
+	print revShape
+	rgbArray = numpy.empty(shape = revShape, dtype=numpy.dtype(object)).flatten()
+	
+	theList = []
+	start = time.time()
+	
+	#rgbArray = list(map(lambda x: self.paletteColors[x], reversedOrder))	
+	for i in range(len(tempBits)):
+	    rgbArray[i] = self.paletteColors[tempBits[i]]
+	elapsed = (time.time() - start)	
+	print elapsed
+	
+	start = time.time()	
 
-	# This is terribly slow, fix me: numpy.fromfunction(lambda , shape)
-	# Copy the corresponding color entry into a new array	
-	rgbArray = list(map(lambda x: self.paletteColors[x], reversedOrder))
+	rgbArray = numpy.array(theList)
+	elapsed = (time.time() - start)	
+	print elapsed	
 	
 	logicalSize = self._calcLogicalBmpSize() # width, height
 
