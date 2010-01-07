@@ -1,13 +1,23 @@
-import wx
 import images
+import math
+import numpy
 import os
 import stat
+import thread
+import threading
 import time
-
-import numpy
-import math
+import wx
 
 from utils.enthoughtSizer import FlowSizer
+import utils.threadpool
+
+#sers of the package can import individual modules from the package, for example:
+#import sound.effects.echo
+#This loads the submodule sound.effects.echo. It must be referenced with its full name.
+#sound.effects.echo.echofilter(input, output, delay=0.7, atten=4)
+
+
+
 
 # Standard 'pixel' size is 8x8
 PIXEL_ZOOM = 8
@@ -254,8 +264,8 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	# having a single row be the number of bits needed for a single 
 	# pixel	
 	tempBits = numpy.unpackbits(npArray)
-	tempBits2 = numpy.reshape(tempBits, (math.ceil(tempBits.size / bpp), bpp))
-	tempBits = numpy.packbits(tempBits2, axis=-1)
+	tempBits = numpy.reshape(tempBits, (math.ceil(tempBits.size / bpp), bpp))
+	tempBits = numpy.packbits(tempBits, axis=-1)
 	shiftedBits = None
 	
 	if bpp == 1:
@@ -269,53 +279,176 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	elif bpp == 8:
 	    shiftedBits = tempBits
 	
-	# Get the actual entry then lookup the entry in the palette table
-	#rgbArray = numpy.fromfunction(wtf, size)
-	self.paletteColors = self.GetParent().GetParent().GetPalette()
-	revShape = tempBits.shape
-	print revShape
-	rgbArray = numpy.empty(shape = revShape, dtype=numpy.dtype(object)).flatten()
-	
-	theList = []
+	# Ok, we need to iterate through each entry in our array and get its
+	# corresponding color in the palette table. This is potentially very
+	# time consuming. A 64MB ROM displayed at 1bpp has 67,108,864 entries.
+	# A threadpool is used. (TODO: should we block or not while waiting?)
 	start = time.time()
-	
-	#rgbArray = list(map(lambda x: self.paletteColors[x], reversedOrder))	
-	for i in range(len(tempBits)):
-	    rgbArray[i] = self.paletteColors[tempBits[i]]
+	shiftedBits = self._entryToPaletteColor(shiftedBits)
 	elapsed = (time.time() - start)	
-	print elapsed
+	print 'Time: ', elapsed
 	
-	start = time.time()	
-
-	rgbArray = numpy.array(theList)
-	elapsed = (time.time() - start)	
-	print elapsed	
+	#rgbArray = numpy.empty(shape = revShape, dtype=numpy.dtype(object)).flatten()
+	# rgbArray = numpy.array(theList)
+	#for i in range(len(tempBits)):
+	    #rgbArray[i] = self.paletteColors[tempBits[i]]
 	
-	logicalSize = self._calcLogicalBmpSize() # width, height
+	logicalWidth, logicalHeight = self._calcLogicalBmpSize()
+	print 'width: ', logicalWidth
+	print 'height: ', logicalHeight
+	print '!!!!!!!!!!!!!!!!!!!!!!!!'
+	#logicalSize = self._calcLogicalBmpSize() # width, height
 
 	#rgbArray2[i, j, 0] is the red component of the i, j pixel
 	#rgbArray2[i, j, 1] is the green component of the i, j pixel
 	#rgbArray2[i, j, 2] is the blue component of the i, j pixel
-	rgbArray2 = numpy.array(rgbArray, dtype=numpy.uint8).reshape(logicalSize[0], logicalSize[1], 3)
+	rgbArray2 = numpy.array(shiftedBits, dtype=numpy.uint8).reshape(logicalWidth, logicalHeight, 3)
 
-	bmp = wx.EmptyBitmap(logicalSize[0], logicalSize[1], 24)
-	temp = numpy.array_split(rgbArray2, self._calcTiles())
-	ordered = numpy.hstack(list(temp)).reshape(logicalSize[0], logicalSize[1], 3)
-	
-	bmp.CopyFromBuffer(ordered.tostring(), wx.BitmapBufferFormat_RGB)
-
+	# Now the tricky part. Shuffle the tiles so that they display horizontally
 	#bmp = ordered.reshape(logicalSize[0], logicalSize[1], 3)
 	#foo = numpy.arange(128).reshape(16,8)
 	#temp = numpy.array_split(foo, 2)
 	#correct = numpy.hstack((temp[0], temp[1]))
 	#correct.flatten()
-	#correct.reshape(16,8)
-	
+	#correct.reshape(16,8)	
+	bmp = wx.EmptyBitmap(logicalWidth, logicalHeight, 24)
+	temp = numpy.array_split(rgbArray2, self._calcTiles())
+	ordered = numpy.hstack(list(temp)).reshape(logicalWidth, logicalHeight, 3)
+	bmp.CopyFromBuffer(ordered.tostring(), wx.BitmapBufferFormat_RGB)
+
+	# And we're done!
         image = bmp.ConvertToImage()
-        image.Rescale(logicalSize[0] * 8, logicalSize[1] * 8)
+        image.Rescale(logicalWidth * 8, logicalHeight * 8)
 	bmp = image.ConvertToBitmap()
 	
 	return bmp
+    
+    def _entryToPaletteColor(self, bitEntries):
+	'''
+	For every element in the specified numpyArray, the corresponding entry
+	in the current pallette is looked up and stored in a new numpy Array
+	@param bitEntries
+	         The raw data adjusted for bpp of the ROM
+	'''
+	ROW_WIDTH = 1000000
+	self.paletteColors = self.GetParent().GetParent().GetPalette()
+	bitEntries = bitEntries.flatten()
+	unevenEntries = None
+	masterEntries = [[]]	
+	#rgbArray = numpy.empty(shape = bitEntries.shape, dtype=numpy.dtype(object))
+	
+	length = len(bitEntries)
+	rows = length / ROW_WIDTH
+	remainder = length % ROW_WIDTH
+	
+	# Break up the odd shaped array into a rectangle and its remaining piece
+	if length > ROW_WIDTH and remainder != 0:
+	    newEndIndex = (length - remainder)
+	    bitEntries = numpy.array(bitEntries[:newEndIndex]).reshape(rows, ROW_WIDTH)
+	    unevenEntries = bitEntries[-remainder:]
+	    #bitEntries = list(wholeEntries)
+	    #bitEntries.append(list(unevenEntries))
+	    print bitEntries
+	else:
+	    #print length
+	    #print 'rows: ', rows
+	    #print 'remainder: ', remainder
+	    bitEntries = [list(bitEntries)]
+
+	
+	def combineResults(request, result):
+	    '''
+	    After each thread is finished this closure gets called. It simply
+	    adds the list that the thread processed onto the master list.
+	    @param request
+	             The request id (long) that finished
+	    @param result
+	             The list that the thread created.
+	    '''
+	    masterEntries.append(result)
+	    
+	def processList(data):
+	    '''
+	    Every thread in the threadpool calls this closure. This is the
+	    function that does the actual work of looking up each entry in
+	    the 'raw' bpp adjusted numpy array and maps it to a color in the
+	    current color palette.
+	    @param data
+	             List of bytes (already adjusted for bpp) that should be
+		     mapped to colors in the color palette.
+	    '''
+	    result = []
+    
+	    for i in range(len(data)):
+		result.append(self.paletteColors[data[i]])    				
+		
+	    return result
+	
+	def handleException(request, exc_info):
+	    '''
+	    Todo: Actually implement this closure and make it display a dialog 
+	          box.
+	    '''
+	    if not isinstance(exc_info, tuple):
+	        # Something is seriously wrong...
+		print request
+		print exc_info
+		raise SystemExit
+            print "Exception occured in request #%s: %s" % (request.requestID, exc_info)
+	    
+	# Figure out how big our poolsize should be. The number of threads is 
+	# the number of rows that have our specified length
+	poolsize = 20 # magic num
+	
+	if rows == 0:
+	    poolsize = 1
+	elif rows < 20:
+	    poolsize = rows
+	
+	# Create a pool of worker threads
+	print 'poolsize: ', poolsize
+	threadPool = utils.threadpool.ThreadPool(2)	    
+	    
+	# Build a WorkRequest object for each row of data. Don't forget the
+	# remainder!
+	
+	requests = utils.threadpool.makeRequests(processList, bitEntries, combineResults, None)
+
+	#remainderReq = utils.threadpool.makeRequests(processList, unevenEntries, combineResults, handleException)
+	
+
+	# Put the work requests in the queue...
+	for req in requests:
+	    threadPool.putRequest(req)
+
+	#threadPool.wait()
+	#threadPool.putRequest(remainderReq)
+	
+	
+	# TODO: Implement progress bar for this...
+	# And wait for the results to arrive in the result queue. This blocks
+	# until results for all work requests have arrived.
+	begin = time.time()	
+	while True:
+	    try:
+		time.sleep(0.1)
+		threadPool.poll()
+	    except utils.threadpool.NoResultsPending:
+		print "**** No pending results."    
+		break
+	print 'Loop time', (time.time() - begin)		    
+	if threadPool.dismissedWorkers:
+	    print "Joining all dismissed worker threads..."
+	    threadPool.joinAllDismissedWorkers()
+	print 'Dismiss time', (time.time() - begin)	    
+
+	begin = time.time()
+	foo = numpy.array(masterEntries, dtype=numpy.dtype(object))
+	print 'Creation time', (time.time() - begin)
+	#print '#########'
+	#print foo
+	#print '#########'	
+	return foo
 
     def ChangeIndexedImageBpp(self, bpp=1):
 	pass
@@ -538,7 +671,7 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	correct.reshape(16,8)	
 	'''
 	pass
-
+    
 # This is an example of what to do for the EVT_MOUSEWHEEL event,
 # but since wx.ScrolledWindow does this already it's not
 # necessary to do it ourselves. You would need to add an event table 
