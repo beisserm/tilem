@@ -733,7 +733,17 @@ class TilemFrame(wx.MDIParentFrame):
 	print "OnSelectionSize"	
 	
     def OnTileSize(self, evt):
-	print "OnTileSize"
+	activeWindow = self.GetActiveChild()
+	
+	if activeWindow != None:
+	    currentSize = activeWindow.GetCanvasSize()
+	    dlg = CanvasSizeDialog(self, *currentSize)
+
+	    if dlg.ShowModal() == wx.ID_OK:
+		newSize = dlg.GetCanvasSize()
+		activeWindow.SetCanvasSize(*newSize)
+		
+	    dlg.Destroy()
 	
     def OnShowBlockGrid(self, evt):
 	print "OnShowBlockGrid"

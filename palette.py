@@ -203,6 +203,8 @@ class PaletteFrame(wx.MiniFrame):
 		blue = random.randint(0, 255)
 		newColor = "#%02x%02x%02x"%(red, green, blue)
 		button.UpdateColor(newColor.upper())
+	
+	self.Refresh()
 
     def OnImportLocal(self, evt):
         pass
