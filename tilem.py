@@ -721,12 +721,11 @@ class TilemFrame(wx.MDIParentFrame):
 	
 	if activeWindow != None:
 	    currentSize = activeWindow.GetCanvasSize()
-	    print currentSize
 	    dlg = CanvasSizeDialog(self, *currentSize)
 
 	    if dlg.ShowModal() == wx.ID_OK:
-		newColumns = dlg.GetColumns()
-		activeWindow.SetCanvasColumns(newColumns)
+		newSize = dlg.GetCanvasSize()
+		activeWindow.SetCanvasSize(*newSize)
 		
 	    dlg.Destroy()
 
@@ -834,5 +833,3 @@ if __name__ == '__main__':
 
     app = MyApp(False)
     app.MainLoop()
-
-

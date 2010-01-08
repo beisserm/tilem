@@ -111,13 +111,13 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	# filesize in bytes
 	self.fileSize = fileSize
 	
-	self.columns = 16
+	self.columns = 5
 	self.rows = 16
 	
 	# This is in 'logical units', that is the desired tile size is w x h.
 	# The actual size on the screen is dependant on the zoom level
-	self.tileWidth = 3
-	self.tileHeight = 3
+	self.tileWidth = 8
+	self.tileHeight = 10
 	
 	# The working copy of the pixels in our current bitmap, adjusted for 
 	# the current bpp. Visually, the array is stored in 3D (x, y, z) with
@@ -148,6 +148,8 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	self.paletteColors = parent.GetParent().GetPalette()
 	
 	self.zoom = (8, 8)
+	
+	self.numTiles = 0
 	
 	if fileStr:
 	    try:
@@ -269,16 +271,24 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	# Copy the corresponding color entry into a new array	
 	rgbArray = list(map(lambda x: self.paletteColors[x], reversedOrder))
 	
-	logicalWidth, logicalHeight = self._calcLogicalBmpSize()
-
+	logicalWidth, logicalHeight = self._calcLogicalBmpSize(len(rgbArray))
+	print 'logicalWidth: ', logicalWidth, ' logicalHeight: ', logicalHeight
+	displayLength = logicalWidth * logicalHeight
+	print displayLength
+	print rgbArray[:displayLength]
 	#rgbArray2[i, j, 0] is the red component of the i, j pixel
 	#rgbArray2[i, j, 1] is the green component of the i, j pixel
 	#rgbArray2[i, j, 2] is the blue component of the i, j pixel
-	rgbArray2 = numpy.array(rgbArray, dtype=numpy.uint8).reshape(logicalWidth, logicalHeight, 3)
-
+	
+	rgbArray2 = numpy.array(rgbArray[:displayLength], dtype=numpy.uint8).reshape(logicalWidth, logicalHeight, 3)
+	print rgbArray2
+	
 	bmp = wx.EmptyBitmap(logicalWidth, logicalHeight, 24)
-	temp = numpy.array_split(rgbArray2, self._calcTiles())
-	ordered = numpy.hstack(list(temp)).reshape(logicalWidth, logicalHeight, 3)
+	temp = numpy.array_split(rgbArray2, self.numTiles, axis=1)
+	print list(temp)
+	ordered = numpy.hstack(list(temp))
+	ordered = ordered.flatten()
+	ordered = ordered.reshape(logicalWidth, logicalHeight, 3)
 	
 	bmp.CopyFromBuffer(ordered.tostring(), wx.BitmapBufferFormat_RGB)
 
@@ -480,37 +490,43 @@ class ScrolledCanvas(wx.ScrolledWindow):
 # Private Methods
 #####
 
-    def _calcLogicalBmpSize(self):
+    def _calcLogicalBmpSize(self, length):
 	'''
-	Figures out the logical size of the bitmap to be displayed 
-	(that is not adjusted for zoom/displaying purposes)
+	Figures out the logical size of the bitmap to be displayed. This is not
+	the entire file and it is not adjusted for zoom/displaying purposes
+	@param length
+	         int length of the current working array
 	@return Tuple containing the (width, height) of the bitmap to be
 	        displayed
 	'''
-	# Just some initial values that make sense (1 tile)
-	logicalBmpWidth = 8
-	logicalBmpHeight = 8
+	fullBmpWidth = self.tileWidth * self.columns
+	fullBmpHeight = self.tileHeight * self.rows
+	fullBmpSize = fullBmpWidth * fullBmpHeight
+	tileSize = self.tileWidth * self.tileHeight	
+	logicalBmpSize = [0, 0]
 	
-	# Do we have less than 1 row of tiles?
-	if self._calcTiles() < self.columns:
-	    logicalBmpWidth = self.tileWidth * self._calcTiles()
-	    logicalBmpHeight = self.tileHeight
-	else:	
-	    logicalBmpWidth = self.tileWidth * self.columns
-	    logicalBmpHeight = self.fileSize / self.tileWidth # total / width = height
-	    
-	return (logicalBmpWidth, logicalBmpHeight)
-    
-    def _calcTiles(self):
-	logicalTileSize = self.tileWidth * self.tileHeight
-	
-	# Do we have any partial tiles?
-	if (self.fileSize % logicalTileSize) == 0:
-	    return math.floor(self.fileSize // logicalTileSize)   
+	# FIXME: Currently we chop off any partial rows
+	# Do we have a full screen of tiles?
+	if length > fullBmpSize:
+	    logicalBmpSize = [fullBmpWidth, fullBmpHeight]
+	    self.numTiles = int(fullBmpSize // tileSize)
+	    print 'tiles: ', self.numTiles
 	else:
-	    return math.floor(self.fileSize // logicalTileSize) + 1
+	    # Ignore partial tiles
+	    self.numTiles = int(length // tileSize)
+	    completeRows = int(self.numTiles // self.columns)
+	    if completeRows > 0:
+		logicalBmpHeight = completeRows * self.tileHeight
+		logicalBmpSize = [fullBmpWidth, logicalBmpHeight]
+		self.rows = completeRows
+		self.numTiles =  completeRows * self.columns
+		print 'tiles: ', self.numTiles
+	    else:
+		self.rows = 0
+	    
+	return logicalBmpSize
 	
-    def _createTiles(self):
+    def _createTiles(self, length):
 	'''
 	foo = numpy.arange(128).reshape(16,8)
 	temp = numpy.array_split(foo, 2)
@@ -518,7 +534,11 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	correct.flatten()
 	correct.reshape(16,8)	
 	'''
-	pass
+	tileSize = self.tileWidth * self.tileHeight
+	numTiles = 0
+		
+	#FIXME! Chop off partial tiles!
+	numTiles = length // tileSize
 
 # This is an example of what to do for the EVT_MOUSEWHEEL event,
 # but since wx.ScrolledWindow does this already it's not
