@@ -8,12 +8,13 @@ import math
 
 from utils.enthoughtSizer import FlowSizer
 
-# Standard 'pixel' size is 8x8
-PIXEL_ZOOM = 8
-zoomSelections = ['50%', '100%', '150%', '200%', '250%', '300%', '350%', '400%',
-                  '450%', '500%', '550%', '600%']
-zoomMapping = {  '50%':4,  '100%':8,  '150%':12, '200%':16, '250%':20, '300%':24, 
-                 '350%':28,'400%':32, '450%':36, '500%':40, '550%':44, '600%':48}
+zoomSelections = ['50%', '75%', '100%', '125%', '150%', '175%', '200%', '225%', 
+                  '250%', '275%', '300%', '350%', '400%', '450%', '500%', 
+                  '550%', '600%']
+zoomMapping = {   '50%':4,   '75%':6,  '100%':8,  '125%':10, '150%':12, 
+                 '175%':14, '200%':16, '225%':18, '250%':20, '275%':22,
+                 '300%':24, '350%':28, '400%':32, '450%':36, '500%':40,
+                 '550%':44, '600%':48}
 
 decoderSelections = ['1bpp linear', '1bpp linear, reverse-order', '1bpp planar',
                      '2bpp linear', '2bpp linear, reverse-order', '2bpp planar',
@@ -136,8 +137,8 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	self.fileSize = fileSize
 	self.fileHandle = None	
 	
-	self.columns = 4
-	self.rows = 4
+	self.columns = 9
+	self.rows = 9
 	
 	# This is in 'logical units', that is the desired tile size is w x h.
 	# The actual size on the screen is dependant on the zoom level
@@ -145,7 +146,7 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	self.tileHeight = 8
 	
 	self.tileGrid = True
-	self.pixelGrid = False
+	self.pixelGrid = True
 	
 	# How many actual pixels to multiple the logical size of the 
 	# pixel/tile/bitmap by. The default value of 8, means that every 
@@ -192,8 +193,8 @@ class ScrolledCanvas(wx.ScrolledWindow):
 
 	self.lines = []	
 
-	self.maxWidth = 1000
-	self.maxHeight = 1000
+	#self.maxWidth = 1000
+	#self.maxHeight = 1000
 	self.x = self.y = 0
 	self.curLine = []
 	self.drawing = False
@@ -201,7 +202,7 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	self.SetBackgroundColour("WHITE")
 	self.SetCursor(wx.StockCursor(wx.CURSOR_PENCIL))
 
-	self.SetVirtualSize((self.maxWidth, self.maxHeight))
+	#self.SetVirtualSize((self.maxWidth, self.maxHeight))
 	self.SetScrollRate(20,20)
 
 	self.DoDrawing()
@@ -258,22 +259,33 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	# Fixme: This chops off partial rows and partial tiles
 	logicalWidth, logicalHeight = self._calcLogicalBmpSize(len(rgbArray))
 	displayLength = logicalWidth * logicalHeight
+	print 'display length: ', displayLength
 	rgbArray2 = numpy.array(rgbArray[:displayLength], dtype=numpy.uint8)
 	
 	#rgbArray2[i, j, 0] is the red component of the i, j pixel
 	#rgbArray2[i, j, 1] is the green component of the i, j pixel
 	#rgbArray2[i, j, 2] is the blue component of the i, j pixel	
-	rgbArray2 = rgbArray2.reshape(logicalWidth, logicalHeight, 3)
+	rgb = rgbArray2.reshape(logicalWidth, logicalHeight, 3)
+	print 'length: rgb2', len(rgb)
+	print 'shape: rgb2', rgb.shape
+	#print rgb[-12:]
 	
 	bmp = wx.EmptyBitmap(logicalWidth, logicalHeight, 24)
 	
 	# split array into the appropriate number of tiles, column-wise	
-	temp = numpy.array_split(rgbArray2, self.numTiles, axis=1)
-
+	# Why is this len(rgb) and not self.numTiles???
+	temp = numpy.array_split(rgb, len(rgb), axis=1)
+	#fuck = numpy.array(temp, dtype=numpy.object)
+	print 'length: fuck', len(temp)
+	#print 'shape: fuck', temp.shape
+	#print fuck[-10:]
+	#print 'numTiles: ', self.numTiles
+	
 	# We don't want to display the tiles only vertically. We want them
 	# to be next to one another and wrap around in rows. This takes each
 	# tile out of our column matrix and 'stacks' (puts) them into a 
 	# row matrix
+	#print temp
 	ordered = numpy.hstack(list(temp))
 	
 	# Get our RGB indexing of pixels back
@@ -433,6 +445,11 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	fullBmpWidth = self.tileWidth * self.columns
 	fullBmpHeight = self.tileHeight * self.rows
 	fullBmpSize = fullBmpWidth * fullBmpHeight
+	
+	print 'length', length
+	print 'full bitmap width: ', fullBmpWidth
+	print 'full bitmap height: ', fullBmpHeight	
+	print 'full bitmapsize: ', fullBmpSize
 	tileSize = self.tileWidth * self.tileHeight	
 	logicalBmpSize = [0, 0]
 	
@@ -441,9 +458,11 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	if length > fullBmpSize:
 	    logicalBmpSize = [fullBmpWidth, fullBmpHeight]
 	    self.numTiles = int(fullBmpSize // tileSize)
+	    print 'full bitmap'
 	    print 'tiles: ', self.numTiles
 	else:
 	    # Ignore partial tiles
+	    print 'partial bitmap'
 	    self.numTiles = int(length // tileSize)
 	    completeRows = int(self.numTiles // self.columns)
 	    if completeRows > 0:
@@ -479,6 +498,7 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	canvasWidth = self.tileWidth * self.columns * self.zoomConstant
 	canvasHeight = self.tileHeight * self.rows * self.zoomConstant
 
+	# Draw rows
 	for i in range(self.rows + 1):
 	    x0 = 0
 	    y0 = i * self.tileHeight * self.zoomConstant
@@ -486,32 +506,13 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	    y1 = i * self.tileHeight * self.zoomConstant
 	    dc.DrawLine(x0, y0, x1, y1)	
 	    
+	# Draw columns
 	for i in range(self.columns + 1):
 	    x0 = i * self.tileWidth * self.zoomConstant
 	    y0 = 0
 	    x1 = i * self.tileWidth * self.zoomConstant
 	    y1 = canvasHeight + 1
-	    dc.DrawLine(x0, y0, x1, y1)		    
-	
-	#for i in range(self.columns + 1):
-	    #dc.DrawLine( i * self.tileWidth * self.zoomConstant, 
-	                 #0, 
-	                 #i * self.tileWidth * self.zoomConstant,
-	                 #canvasHeight + 1)
-	# Draw grid rows
-	#self.zoomConstant = 1
-	#for i in range(2):
-	    #x0 = 0
-	    #y0 = i * self.tileHeight * self.zoomConstant
-	    #x1 = canvasWidth
-	    #y1 = self.tileHeight * self.zoomConstant
-	    #print '(', x0, ',', y0, ') (', x1, ',', y1, ')' 
-	    #dc.DrawRectangle(x0, y0, x1, y1)
-	    
-	# Draw grid columns
-	#for i in range(self.rows):
-	    #dc.DrawRectangle( (i*self.tileWidth * self.zoomConstant), 0,
-	                      #self.tileWidth * self.zoomConstant, canvasHeight)
+	    dc.DrawLine(x0, y0, x1, y1)
 	    
     def _drawPixelGrid(self, dc):
 	'''
@@ -523,15 +524,21 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	canvasWidth = self.tileWidth * self.columns * self.zoomConstant
 	canvasHeight = self.tileHeight * self.rows * self.zoomConstant
 	
-	# Draw grid rows
-	for i in range(self.columns * self.zoomConstant):
-	    dc.DrawRectangle(0, (i*self.zoomConstant),  
-	                     canvasWidth, self.tileHeight * self.zoomConstant)
+	# Draw rows
+	for i in range((self.rows * self.zoomConstant) + 1):
+	    x0 = 0
+	    y0 = i * self.zoomConstant
+	    x1 = canvasWidth + 1
+	    y1 = i * self.zoomConstant
+	    dc.DrawLine(x0, y0, x1, y1)	
 	    
-	## Draw grid columns
-	#for i in range(self.rows * self.zoomConstant):
-	    #dc.DrawRectangle( (i*self.zoomConstant), 0,
-	                      #self.tileWidth * self.zoomConstant, canvasHeight)	
+	# Draw columns
+	for i in range((self.columns * self.zoomConstant) + 1):
+	    x0 = i * self.zoomConstant
+	    y0 = 0
+	    x1 = i * self.zoomConstant
+	    y1 = canvasHeight + 1
+	    dc.DrawLine(x0, y0, x1, y1)	
 	
     def _getPalette(self):
 	'''
