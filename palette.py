@@ -2,8 +2,9 @@ import wx
 import random
 import math
 import numpy
-#import wx.lib
+
 #from cubecolourdialog import CubeColourDialog
+import events.paletteUpdateEvent as pue
 
 from dialogs.newPaletteDialog import NewPaletteDialog
 
@@ -123,7 +124,7 @@ class PaletteFrame(wx.MiniFrame):
 
 	self.toolBar.colorEncodings = wx.ComboBox(choices=bppSelections,
 	    id=-1, name='zoom', parent=self.toolBar, pos=wx.Point(2, 1), size=wx.Size(120, 20),
-	    style=wx.CB_READONLY, value='15bpp RGB(555)')
+	    style=wx.CB_READONLY, value='8bpp EGA')
 	self.Bind(wx.EVT_COMBOBOX, self.OnSelectEncoding, self.toolBar.colorEncodings)	
 	
 	#change hard coded value
@@ -205,6 +206,7 @@ class PaletteFrame(wx.MiniFrame):
 		button.UpdateColor(newColor.upper())
 	
 	self.Refresh()
+	self.OnPaletteUpdate() 	
 
     def OnImportLocal(self, evt):
         pass
@@ -227,6 +229,12 @@ class PaletteFrame(wx.MiniFrame):
 	rgbPalette = map(lambda button : button.GetBackgroundColour().Get(), buttonList)
 	return rgbPalette
 
+    def OnPaletteUpdate(self):
+	'''
+	TODO: Get rid of me. Make event driven. 
+	'''
+	self.GetParent().OnColorPaletteUpdate()    
+
 # -----------------------------------------------------------------------------	
 class ColoringBook(wx.lib.agw.flatnotebook.FlatNotebook):
     def __init__(self, prnt):
@@ -241,6 +249,13 @@ class ColoringBook(wx.lib.agw.flatnotebook.FlatNotebook):
 	         The page (tab) to add to this notebook
 	"""
         wx.lib.agw.flatnotebook.FlatNotebook.AddPage(self, page, page.GetTitle())
+	
+    def OnPaletteUpdate(self):
+	'''
+	TODO: Get rid of me. Make event driven. 
+	'''
+	self.GetParent().OnPaletteUpdate()
+	
 # -----------------------------------------------------------------------------
 """
 A basic panel that's represents a tab on the color palette window.
@@ -292,7 +307,22 @@ class ColoringPage(wx.Panel):
 	if colordlg.ShowModal() == wx.ID_OK:
 	    rgbColor = colordlg.GetHexColor()
 	    buttonObject.UpdateColor(rgbColor)
+	    self.OnPaletteUpdate()              
 	    colordlg.Destroy()
+	    
+    def OnPaletteUpdate(self):
+	'''
+	TODO: Get rid of me. Make event driven. 
+	'''
+	self.GetParent().OnPaletteUpdate()
+	#evt = pue.PaletteUpdateEvent(pue.myEVT_PALETTE_UPDATE, self.GetId())
+        #evt.SetMyVal(pt)
+        #print id(evt), sys.getrefcount(evt)
+	#print self.GetParent().GetParent().GetParent()
+	#wx.PostEvent(self.GetParent().GetParent().GetParent(), evt)	
+        #self.GetEventHandler().ProcessEvent(evt)
+        #print id(evt), sys.getrefcount(evt)
+        #evt.Skip()	
 
     def GetTitle(self):
 	return self.title
@@ -310,7 +340,6 @@ class ColoringPage(wx.Panel):
 	self.encoding = encoding
 
     def UpdateAll(self):
-	print 'Updating all: ', len(self.colorEntries)
 	for entry in self.colorEntries:
 	    entry.UpdateSelf()
 

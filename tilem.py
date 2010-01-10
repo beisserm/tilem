@@ -6,9 +6,14 @@ __date__ ="$Oct 16, 2009 6:33:40 PM$"
 
 from dialogs.gotoAddressDialog import GotoDialog
 from dialogs.canvasSizeDialog import CanvasSizeDialog
+from dialogs.tileSizeDialog import TileSizeDialog
 from dialogs.newFileDialog import NewFileDialog
+from dialogs.aboutDialog import AboutDialog
 from ToolPanel import ToolPanel
 from cubecolourdialog import CubeColourDialog
+
+import events.paletteUpdateEvent as pue
+#from events.pale import PaletteUpdateEvent
 
 import wx
 import numpy
@@ -343,8 +348,9 @@ class TilemFrame(wx.MDIParentFrame):
 
 	self.winCount = 0
 	self.paletteFrame = palette.PaletteFrame(self)
+	#self.Bind(pue.EVT_PALETTE_UPDATE, self.OnUpdateColorPaletteEntry, id=self.GetId())
 	self.toolPanel = ToolPanel(self)
-	self.tb1 = self.CreateTopToolBar()	
+	self.tb1 = self.CreateTopToolBar()
 	
 	# Setup our menubar
 	menubar = wx.MenuBar()
@@ -522,6 +528,7 @@ class TilemFrame(wx.MDIParentFrame):
 	rowInterleavedBlocksMenuItem = wx.MenuItem(viewMenu, ID_RowInterleaveBlocksMenuItem, "Row-interleave Blocks", "", wx.ITEM_CHECK)
 	viewMenu.AppendItem(rowInterleavedBlocksMenuItem)
 	self.Bind(wx.EVT_MENU, self.OnRowInterleaveBlocks, rowInterleavedBlocksMenuItem)
+	rowInterleavedBlocksMenuItem.Enable(False)
 	
 	viewMenu.AppendSeparator()
 
@@ -535,13 +542,15 @@ class TilemFrame(wx.MDIParentFrame):
 
 	selectionSizeMenuItem = wx.MenuItem(viewMenu, ID_SelectionSizeMenuItem, "Selection Size...", "", wx.ITEM_NORMAL)
 	viewMenu.AppendItem(selectionSizeMenuItem)
-	self.Bind(wx.EVT_MENU, self.OnSelectionSize, selectionSizeMenuItem)		
+	self.Bind(wx.EVT_MENU, self.OnSelectionSize, selectionSizeMenuItem)
+	selectionSizeMenuItem.Enable(False)
 	
 	viewMenu.AppendSeparator()
 
 	blockGridMenuItem = wx.MenuItem(modeMenu, ID_BlockGridMenuItem, "Block Grid", "", wx.ITEM_CHECK)
 	viewMenu.AppendItem(blockGridMenuItem)
 	self.Bind(wx.EVT_MENU, self.OnShowBlockGrid, blockGridMenuItem)
+	blockGridMenuItem.Enable(False)
 
 	tileGridMenuItem = wx.MenuItem(modeMenu, ID_TileGridMenuItem, "Tile Grid", "", wx.ITEM_CHECK)
 	viewMenu.AppendItem(tileGridMenuItem)
@@ -598,10 +607,12 @@ class TilemFrame(wx.MDIParentFrame):
 	addBookmarkMenuItem = wx.MenuItem(navigateMenu, ID_AddBookMarkMenuItem, "Add Bookmark", "", wx.ITEM_NORMAL)
 	navigateMenu.AppendItem(addBookmarkMenuItem)
 	self.Bind(wx.EVT_MENU, self.OnAddBookmark, addBookmarkMenuItem)
+	addBookmarkMenuItem.Enable(False)
 
 	organizeBookmarksMenuItem = wx.MenuItem(navigateMenu, ID_OrganizeBookmarksMenuItem, "Organize Bookmarks", "", wx.ITEM_NORMAL)
 	navigateMenu.AppendItem(organizeBookmarksMenuItem)
 	self.Bind(wx.EVT_MENU, self.OnOrganizeBookmarks, organizeBookmarksMenuItem)
+	organizeBookmarksMenuItem.Enable(False)
 
 	return navigateMenu
 
@@ -614,6 +625,7 @@ class TilemFrame(wx.MDIParentFrame):
 	helpTopicsItem = wx.MenuItem(helpMenu, ID_HelpTopicsMenuItem, "Help Topics\tF1", "", wx.ITEM_NORMAL)
 	helpMenu.AppendItem(helpTopicsItem)
 	self.Bind(wx.EVT_MENU, self.OnHelpTopics, helpTopicsItem)
+	helpTopicsItem.Enable(False)
 
 	aboutTopicsItem = wx.MenuItem(helpMenu, ID_AboutMenuItem, "About Tilem", "", wx.ITEM_NORMAL)
 	helpMenu.AppendItem(aboutTopicsItem)
@@ -733,26 +745,39 @@ class TilemFrame(wx.MDIParentFrame):
 	print "OnSelectionSize"	
 	
     def OnTileSize(self, evt):
+	'''
+	Handles the tile size menu option
+	'''
 	activeWindow = self.GetActiveChild()
 	
 	if activeWindow != None:
-	    currentSize = activeWindow.GetCanvasSize()
-	    dlg = CanvasSizeDialog(self, *currentSize)
+	    currentSize = activeWindow.GetTileSize()
+	    dlg = TileSizeDialog(self, *currentSize)
 
 	    if dlg.ShowModal() == wx.ID_OK:
-		newSize = dlg.GetCanvasSize()
-		activeWindow.SetCanvasSize(*newSize)
+		newSize = dlg.GetTileSize()
+		activeWindow.SetTileSize(*newSize)
 		
 	    dlg.Destroy()
 	
     def OnShowBlockGrid(self, evt):
+	value = evt.IsChecked()
+	print value
 	print "OnShowBlockGrid"
 
     def OnShowTileGrid(self, evt):
-	print "OnShowTileGrid"
+	value = evt.IsChecked()	
+	activeWindow = self.GetActiveChild()
+	
+	if activeWindow != None:
+	    currentSize = activeWindow.SetTileGrid(value)
 
     def OnShowPixelGrid(self, evt):
-	print "OnShowPixelGrid"
+	value = evt.IsChecked()	
+	activeWindow = self.GetActiveChild()
+	
+	if activeWindow != None:
+	    currentSize = activeWindow.SetPixelGrid(value)
 
     def OnShowColorPalette(self, evt):
 	print "OnShowColorPalette"
@@ -761,6 +786,7 @@ class TilemFrame(wx.MDIParentFrame):
 	print "OnShowStatusbar"
 
     def OnShowToolbar(self, evt):
+	value = evt.IsChecked()	
 	print "OnShowToolbar"
 
 #Image
@@ -803,7 +829,7 @@ class TilemFrame(wx.MDIParentFrame):
 	print "OnHelpTopics"
 
     def OnAbout(self, evt):
-	print "OnAbout"
+	AboutDialog()
 #Help
 
 # Others
@@ -811,7 +837,7 @@ class TilemFrame(wx.MDIParentFrame):
 	dc = evt.GetDC()
 	evt.GetId()
 	if not dc:
-		dc = wx.ClientDC(self.GetClientWindow())
+	    dc = wx.ClientDC(self.GetClientWindow())
 
 	# tile the background bitmap
 	sz = self.GetClientSize()
@@ -828,6 +854,16 @@ class TilemFrame(wx.MDIParentFrame):
 
 	    x = x + w
 
+    def OnColorPaletteUpdate(self):
+	'''
+	TODO: Make actual event
+	Event from the PaletteFrame. A color on the palette has been changed.
+	Triggers a redraw
+	'''
+	activeWindow = self.GetActiveChild()
+	
+	if activeWindow != None:
+	    currentSize = activeWindow.OnPaletteUpdate()
 
 #----------------------------------------------------------------------
 

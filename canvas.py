@@ -5,6 +5,7 @@ import stat
 
 import numpy
 import math
+from threading import Thread
 
 from utils.enthoughtSizer import FlowSizer
 
@@ -84,7 +85,30 @@ class CanvasFrame(wx.MDIChildFrame):
 	self.canvas.Refresh()
 
     def OnDecode(self, evt):
-	selection = evt.GetString()	
+	selection = evt.GetString()
+	if (selection.find(',') == -1) and (selection.find('linear') != -1):
+	    #linear
+	    bpp = int(selection[0])
+	    self.canvas.UpdateIndexedBitmap(bpp)
+	elif (selection.find(',') != -1) and (selection.find('linear') != -1):
+	    # linear reveresed order
+	    pass
+	elif selection.find('planar') != -1:
+	    #self.canvas.CreatePlanarBitmap()
+	    pass
+	else:
+	    #self.canvas.CreatedBitmap()
+	    pass
+	
+	self.canvas.DoDrawing()
+	self.canvas.Refresh()	
+    
+    def OnPaletteUpdate(self):
+	bpp = int(self.canvas.GetBpp())
+	self.canvas.UpdateIndexedBitmap(bpp)
+	self.canvas.DoDrawing()
+	self.canvas.Refresh()
+	
 #####
 # Passthrough functions
 #####
@@ -94,12 +118,16 @@ class CanvasFrame(wx.MDIChildFrame):
 	Passthrough function that turns the tile grid on/off
 	'''	
 	self.canvas.SetTileGrid(val)
+	self.canvas.DoDrawing()
+	self.canvas.Refresh()	
 	
     def SetPixelGrid(self, val=False):
 	'''
 	Passthrough function that turns the pixel grid on/off
 	'''
 	self.canvas.SetPixelGrid(val)
+	self.canvas.DoDrawing()
+	self.canvas.Refresh()	
 
     def SetCanvasSize(self, rows, columns):
 	'''
@@ -107,7 +135,19 @@ class CanvasFrame(wx.MDIChildFrame):
 	be in the viewable area. 
 	'''
 	self.canvas.SetCanvasSize(rows, columns)
-	self.canvas.CreateIndexedBitmap()
+	self.canvas.UpdateIndexedBitmap()
+	self.canvas.DoDrawing()
+	self.canvas.Refresh()	 
+	
+    def SetTileSize(self, width, height):
+	'''
+	Passthrough function to set the width and height of the tile (sprite)
+	size
+	'''
+	self.canvas.SetTileSize(width, height)
+	self.canvas.UpdateIndexedBitmap()
+	self.canvas.DoDrawing()
+	self.canvas.Refresh()	
     
     def GetCanvasSize(self):
 	'''
@@ -137,16 +177,16 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	self.fileSize = fileSize
 	self.fileHandle = None	
 	
-	self.columns = 9
-	self.rows = 9
+	self.columns = 16
+	self.rows = 16
 	
 	# This is in 'logical units', that is the desired tile size is w x h.
 	# The actual size on the screen is dependant on the zoom level
 	self.tileWidth = 8
 	self.tileHeight = 8
 	
-	self.tileGrid = True
-	self.pixelGrid = True
+	self.tileGrid = False
+	self.pixelGrid = False
 	
 	# How many actual pixels to multiple the logical size of the 
 	# pixel/tile/bitmap by. The default value of 8, means that every 
@@ -157,6 +197,9 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	# the number of bytes in the file.
 	self.fileBytes = None
 
+	# This is the completed processed fileBytes
+	self.rgbEndData = []	
+
 	# We keep track of 2 bitmaps. 1 is the logical 1-1 pixel mapping, and
 	# the display incorporates the zoom factor on the image
 	self.logicalBmp = None
@@ -165,6 +208,8 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	self.paletteColors = self._getPalette()
 	
 	self.numTiles = 0
+	
+	self.bpp = 8
 	
 	if fileStr:
 	    try:
@@ -177,7 +222,7 @@ class ScrolledCanvas(wx.ScrolledWindow):
 		# little endian, (right most bit being the LSB), but once it's
 		# in the buffer we can change it
 		self.bytesArray = numpy.fromfile(self.fileHandle, dtype=numpy.uint8)
-		self.CreateIndexedBitmap()
+		self.UpdateIndexedBitmap(self.bpp, isNew=True)
 	    except IOError:
 		print 'Unable to open file: ', fileStr
 	else:
@@ -193,8 +238,6 @@ class ScrolledCanvas(wx.ScrolledWindow):
 
 	self.lines = []	
 
-	#self.maxWidth = 1000
-	#self.maxHeight = 1000
 	self.x = self.y = 0
 	self.curLine = []
 	self.drawing = False
@@ -202,7 +245,6 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	self.SetBackgroundColour("WHITE")
 	self.SetCursor(wx.StockCursor(wx.CURSOR_PENCIL))
 
-	#self.SetVirtualSize((self.maxWidth, self.maxHeight))
 	self.SetScrollRate(20,20)
 
 	self.DoDrawing()
@@ -212,11 +254,11 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	self.Bind(wx.EVT_MOTION, self.OnLeftButtonEvent)
 	self.Bind(wx.EVT_PAINT, self.OnPaint)
 	
-    def CreateIndexedBitmap(self):
+    def UpdateIndexedBitmap(self, bpp=8, isNew=False):
 	"""
-	Creates a bitmap image from a numpy array. Each entry in the array is
-	assumed to be the index into the palette of the color that is suppose
-	to be displayed.
+	Creates/updates a bitmap image from a numpy array. Each entry in the 
+	array is assumed to be the index into the palette of the color that is 
+	suppose	to be displayed.
 	
 	The width and height of the bitmap is based upon the tile (sprite) size 
 	specified by the user.
@@ -228,76 +270,111 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	# a nice (n x 8) vector to work with where each element is a single 
 	# bit. This allows us to decode arbitrary bits per pixel by 
 	# having a single row be the number of bits needed for a single 
-	# pixel	
-	tempBits = numpy.unpackbits(self.bytesArray)
-	bpp = 8
+	# pixel
+	unpackedBits = numpy.unpackbits(self.bytesArray)
+	
+	self.bpp = int(bpp)
 	
 	# TODO: Account for endianness
-	tempBits = numpy.reshape(tempBits, (math.ceil(tempBits.size / bpp), bpp))
-	reversedOrder = numpy.packbits(tempBits, axis=-1)
+	_shape = (int(math.ceil(unpackedBits.size / bpp)), bpp)
+	unpackedBits = unpackedBits.reshape(_shape)
+	packedBits = numpy.packbits(unpackedBits, axis=1)
 	shiftedBits = None
-	
-	if bpp == 1:
-	    shiftedBits = numpy.right_shift(reversedOrder, 7)
-	elif bpp == 2:
-	    shiftedBits = numpy.right_shift(reversedOrder, 6)
-	elif bpp == 3:
-	    shiftedBits = numpy.right_shift(reversedOrder, 5)
-	elif bpp == 4:
-	    shiftedBits = numpy.right_shift(reversedOrder, 4)
-	elif bpp == 8:
-	    shiftedBits = reversedOrder
-	
-	self.paletteColors = self._getPalette()
 
-	# TODO: Thread this
-	# Get the actual entry then lookup the entry in the palette table and
-	# copy the corresponding color entry into a new array	
-	rgbArray = list(map(lambda x: self.paletteColors[x], reversedOrder))
+	if bpp == 1:
+	    shiftedBits = numpy.right_shift(packedBits, 7)
+	elif bpp == 2:
+	    shiftedBits = numpy.right_shift(packedBits, 6)
+	elif bpp == 3:
+	    shiftedBits = numpy.right_shift(packedBits, 5)
+	elif bpp == 4:
+	    shiftedBits = numpy.right_shift(packedBits, 4)
+	elif bpp == 8:
+	    shiftedBits = packedBits
 	
+	# Correct up until this point
+	print shiftedBits[:64].reshape(8,8)
+	self.paletteColors = self._getPalette()
 	# Figure out how big our bitmap should be
 	# Fixme: This chops off partial rows and partial tiles
-	logicalWidth, logicalHeight = self._calcLogicalBmpSize(len(rgbArray))
+	logicalWidth, logicalHeight = self._calcLogicalBmpSize(len(shiftedBits))
 	displayLength = logicalWidth * logicalHeight
-	print 'display length: ', displayLength
+	
+	# Get the actual entry then lookup the entry in the palette table and
+	# copy the corresponding color entry into a new array. The main thread
+	# only processes enough to display a single screen to the user
+	# right away. We spawn another thread to process the entire file
+	rgbArray = list(map(lambda x: self.paletteColors[x], shiftedBits[:displayLength].flatten()))
+	
+	print 'looked up: '
+	print numpy.array(rgbArray[:64]).reshape(8,8,3)
+	print ''
+	
+	# Only process the whole file once
+	if isNew:
+	    self._processRemainingBytes(shiftedBits)
+	
 	rgbArray2 = numpy.array(rgbArray[:displayLength], dtype=numpy.uint8)
 	
-	#rgbArray2[i, j, 0] is the red component of the i, j pixel
-	#rgbArray2[i, j, 1] is the green component of the i, j pixel
-	#rgbArray2[i, j, 2] is the blue component of the i, j pixel	
-	rgb = rgbArray2.reshape(logicalWidth, logicalHeight, 3)
-	print 'length: rgb2', len(rgb)
-	print 'shape: rgb2', rgb.shape
-	#print rgb[-12:]
+	#print 'uint8'
+	#print rgbArray2[:64]
 	
-	bmp = wx.EmptyBitmap(logicalWidth, logicalHeight, 24)
+
+	# 4-D array. Think color pixel cube in an array
+	rgbArray2 = rgbArray2.reshape(self.numTiles, self.tileHeight, self.tileWidth, 3)
+
 	
-	# split array into the appropriate number of tiles, column-wise	
-	# Why is this len(rgb) and not self.numTiles???
-	temp = numpy.array_split(rgb, len(rgb), axis=1)
-	#fuck = numpy.array(temp, dtype=numpy.object)
-	print 'length: fuck', len(temp)
-	#print 'shape: fuck', temp.shape
-	#print fuck[-10:]
-	#print 'numTiles: ', self.numTiles
+	tiles = []
+	for tile in rgbArray2:
+	    tiles.append(tile)
+
+	print 'length b4 stack'
+	print len(rgbArray2)
+	#for tile in 
 	
 	# We don't want to display the tiles only vertically. We want them
 	# to be next to one another and wrap around in rows. This takes each
 	# tile out of our column matrix and 'stacks' (puts) them into a 
 	# row matrix
-	#print temp
-	ordered = numpy.hstack(list(temp))
+	#ordered = numpy.hstack(rgbArray2)
+	ordered = numpy.hstack(tiles)	
 	
+	
+	print 'hstack'
+	printing = numpy.array(list(ordered.flatten()[:192])).reshape(8,8,3)
+	print printing
+	#print ordered[:2][:64]
+	
+	# Note: This isn't necessary, but it might be eventually.
 	# Get our RGB indexing of pixels back
-	ordered = ordered.flatten()
-	ordered = ordered.reshape(logicalWidth, logicalHeight, 3)
+	#ordered[i, j, 0] is the red component of the i, j pixel
+	#ordered[i, j, 1] is the green component of the i, j pixel
+	#ordered[i, j, 2] is the blue component of the i, j pixel		
+	# rows x cols = logicalHeight x logicalWidth
+	#ordered = ordered.flatten()	
+	#ordered = ordered.reshape(logicalHeight, logicalWidth, 3)
 	
+	#Test procedure:
+	# This is for a tile of height:6, width:5, and grid of height:1, width:2
+	#>>> foo = []
+	#>>> for item in range(40):
+	#	foo.append([random.randrange(0,255) for i in range(3)])
+	#>>> array = numpy.array(foo)
+	#>>> rgbArray = numpy.array_split(array, 2*1)
+	#>>> ordered = numpy.hstack(array)
+	#>>> ordered2 = ordered.flatten().reshape(10,4,3)	
+	
+	bmp = wx.EmptyBitmap(logicalWidth, logicalHeight, 24)	
 	bmp.CopyFromBuffer(ordered.tostring(), wx.BitmapBufferFormat_RGB)
 	self.logicalBmp = bmp
 	
-	# We're done, make account for the scaling factor and draw the bitmap
-	self._scaleImage()		
+	# We're done, account for the scaling factor and draw the bitmap
+	self._scaleImage()
 
+    def IndexedBmpUpdate(self):
+	
+	pass
+	
     def OnPaint(self, event):
 	#if BUFFERED:
 	    # Create a buffered paint DC.  It will create the real
@@ -388,15 +465,31 @@ class ScrolledCanvas(wx.ScrolledWindow):
 #####
 # Getters / Setters
 #####
-    
+
+    def GetBpp(self):
+	return self.bpp
+
     def GetTileSize(self):
+	'''
+	Returns the current tile size [width, height]
+	'''
 	return [self.tileWidth, self.tileHeight]
     
     def SetTileSize(self, width, height):
+	'''
+	Updates the canvas tile size
+	@param width
+	         int (1-128)
+	@param height
+	         int (1-128)
+	'''
 	self.tileWidth = width
 	self.tileHeight = height
 
     def GetCanvasSize(self):
+	'''
+	Returns the current canvas size [rows, cols]
+	'''
 	return [self.rows, self.columns]	
     
     def SetCanvasSize(self, rows, columns):
@@ -420,9 +513,15 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	self.fileSize = byteSize	
 	    
     def SetTileGrid(self, val=False):
+	'''
+	Toggles the tile grid setting
+	'''
 	self.tileGrid = val
 	    
     def SetPixelGrid(self, val=False):
+	'''
+	Toggles the pixel grid setting
+	'''
 	self.pixelGrid = val
 	
     def SetZoom(self, zoomScale):
@@ -430,7 +529,8 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	Updates the zoom factor and redraws the image with the new scaling
 	'''
 	self.zoomConstant = zoomScale
-	self._scaleImage()	
+	self._scaleImage()
+    
 #####
 # Private Methods
 #####
@@ -524,7 +624,11 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	canvasWidth = self.tileWidth * self.columns * self.zoomConstant
 	canvasHeight = self.tileHeight * self.rows * self.zoomConstant
 	
-	# Draw rows
+	# Don't know why we need this but we do...
+	if self.zoomConstant <= 8:
+	    self.zoomConstant = 8
+	    
+	# Draw rows	    
 	for i in range((self.rows * self.zoomConstant) + 1):
 	    x0 = 0
 	    y0 = i * self.zoomConstant
@@ -546,7 +650,20 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	CanvasFrame (parent ->) TilemFrame (has the ->) PaletteFrame	
 	'''
 	return self.GetParent().GetParent().GetPalette()	
+
+    
+    def _processRemainingBytes(self, arrayBytes):
+	'''
+	Spawns a new thread to take care of mapping the entire byte
+	array to their palette colors
+	'''
 	
+	def lookup():
+	    self.rgbEndData = list(map(lambda x: self.paletteColors[x], arrayBytes))
+
+	processRemaining = Thread(target=lookup)
+	processRemaining.start()
+
 # This is an example of what to do for the EVT_MOUSEWHEEL event,
 # but since wx.ScrolledWindow does this already it's not
 # necessary to do it ourselves. You would need to add an event table 

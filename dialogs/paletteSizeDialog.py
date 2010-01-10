@@ -14,7 +14,7 @@ class ChangePaletteDialog(wx.Dialog):
     def _init_ctrls(self, prnt):
         # generated method, don't edit
         wx.Dialog.__init__(self, id=wxID_CHANGEPALETTEDIALOG,
-              name='ChangePaletteDialog', parent=prnt, pos=wx.Point(530, 359),
+              name='ChangePaletteDialog', parent=prnt,
               size=wx.Size(226, 136), style=wx.DEFAULT_DIALOG_STYLE,
               title='Change Palette Size')
         self.SetClientSize(wx.Size(220, 104))
