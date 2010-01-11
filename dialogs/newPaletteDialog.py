@@ -28,24 +28,7 @@ class NewPaletteDialog(wx.Dialog):
               allow_none=False, default_color=wx.BLACK,
               id=-1, limited=False, max=512, min=1,
               name='heightField', oob_color=wx.RED, parent=self,
-              pos=wx.Point(64, 24), size=wx.Size(100, 21), style=0, value=256)        
-        
-        #self.sizeField = NumCtrl( 
-            #self, id = -1, value = 0, pos=wx.Point(64, 24),
-            #size=wx.Size(56, 21), style = 0, validator = wx.DefaultValidator,
-            #name = "sizeField", integerWidth = 4, fractionWidth = 0, allowNone = False,
-            #allowNegative = False, useParensForNegatives = False, groupDigits = False,
-            #groupChar = ',', decimalChar = '.', min = 1, max = 4096, limited = False,
-            #limitOnFieldChange = True, selectOnEntry = True, foregroundColour = "Black",
-            #signedForegroundColour = "Red", emptyBackgroundColour = "White",
-            #validBackgroundColour = "White", invalidBackgroundColour = "Yellow",
-            #autoSize = True
-        #)
-        
-        #self.sizeField = wx.TextCtrl(id=wxID_NEWPALETTEDIALOGTEXTCTRL1,
-              #name='sizeField', parent=self, pos=wx.Point(64, 24),
-              #size=wx.Size(56, 21), style=0, value='512')
-        #self.sizeField.SetMaxLength(5)
+              pos=wx.Point(64, 24), size=wx.Size(100, 21), style=0, value=256)
 
         self.sizeTxt = wx.StaticText(id=wxID_NEWPALETTEDIALOGSIZETXT,
               label='Size', name='sizeTxt', parent=self, pos=wx.Point(16, 28),
@@ -62,22 +45,14 @@ class NewPaletteDialog(wx.Dialog):
         self.OkButton = wx.Button(id=wx.ID_OK, label='OK',
               name='OkButton', parent=self, pos=wx.Point(48, 112),
               size=wx.Size(75, 23), style=0)
-        #self.OkButton.Bind(wx.EVT_BUTTON, self.OnOk, id=ID_OkButton)
 
         self.CancelButton = wx.Button(id=wx.ID_CANCEL,
               label='Cancel', name='CancelButton', parent=self,
               pos=wx.Point(144, 112), size=wx.Size(75, 23), style=0)
-        #self.CancelButton.Bind(wx.EVT_BUTTON, self.OnCancel,
-              #id=ID_CancelButton)   
 
     def __init__(self, parent):
         self._init_ctrls(parent)
-        
-    #def OnOk(self, event):
-        #self.EndModal(wx.ID_OK)
-        
-    #def OnCancel(self, event):
-        #self.EndModal(wx.ID_CANCEL)
+
 
     def GetSize(self):
         ''' 

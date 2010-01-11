@@ -18,7 +18,6 @@ class ChangePaletteDialog(wx.Dialog):
               size=wx.Size(226, 136), style=wx.DEFAULT_DIALOG_STYLE,
               title='Change Palette Size')
         self.SetClientSize(wx.Size(220, 104))
-        self.SetToolTipString('')
 
         self.OKButton = wx.Button(id=wx.ID_OK, label='OK', name='OKButton',
               parent=self, pos=wx.Point(24, 64), size=wx.Size(75, 23), style=0)

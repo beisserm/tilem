@@ -18,6 +18,8 @@ from utils.enthoughtSizer import FlowSizer
 [ID_Self, ID_NewPalette, ID_ImportSaveState, ID_ImportFromThisFile, 
  ID_Randomize, ID_MenuBar] = [wx.NewId() for num in range(6)]
 
+MENU_EDIT_RENAME_PAGE = wx.NewId()
+
 # the default 256-color palette. Taken from the GBA game Gauntlet/Rampart
 defaultPalette = [
     '#000000', '#000000', '#5858A0', '#6868B0', '#7878D0', '#B8B8F8', '#606060', '#000000',
@@ -116,8 +118,8 @@ class PaletteFrame(wx.MiniFrame):
         menubar = wx.MenuBar()
         menubar.Append(self.CreatePaletteMenu(), "Palette")
         self.SetMenuBar(menubar)
-
-        self.book = ColoringBook(self)
+	
+        self.book = ColoringBook(self)	
         
 	self.toolBar = wx.ToolBar(id=-1, name='toolBar1', parent=self, pos=wx.DefaultPosition,
 	                     size=wx.Size(275, 28), style=wx.TB_HORIZONTAL | wx.NO_BORDER | wx.TB_BOTTOM )		    
@@ -212,7 +214,7 @@ class PaletteFrame(wx.MiniFrame):
         pass
 
     def OnImportSaveState(self, evt):
-        pass
+        pass 
     
     def OnSelectEncoding(self, evt):
 	selection = evt.GetString()
@@ -248,7 +250,9 @@ class ColoringBook(wx.lib.agw.flatnotebook.FlatNotebook):
 	style |= wx.lib.agw.flatnotebook.FNB_MOUSE_MIDDLE_CLOSES_TABS
 	style |= wx.lib.agw.flatnotebook.FNB_NO_X_BUTTON
 	
-        self.SetWindowStyleFlag(style)		
+        self.SetWindowStyleFlag(style)
+	
+	self._createRightClickMenu()
 	
     def AddPage(self, page):
 	"""
@@ -257,6 +261,12 @@ class ColoringBook(wx.lib.agw.flatnotebook.FlatNotebook):
 	         The page (tab) to add to this notebook
 	"""
         wx.lib.agw.flatnotebook.FlatNotebook.AddPage(self, page, page.GetTitle())
+	
+    def _createRightClickMenu(self):
+        self._rmenu = wx.Menu()
+        item = wx.MenuItem(self._rmenu, MENU_EDIT_RENAME_PAGE, "Rename Tab\tCtrl+F4", "Rename Tab")
+        self._rmenu.AppendItem(item)
+	self.SetRightClickMenu(self._rmenu)
 	
     def OnPaletteUpdate(self):
 	'''
@@ -330,7 +340,7 @@ class ColoringPage(wx.Panel):
 	#wx.PostEvent(self.GetParent().GetParent().GetParent(), evt)	
         #self.GetEventHandler().ProcessEvent(evt)
         #print id(evt), sys.getrefcount(evt)
-        #evt.Skip()	
+        #evt.Skip()
 
     def GetTitle(self):
 	return self.title
