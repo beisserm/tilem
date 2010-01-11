@@ -1,7 +1,7 @@
 #Boa:Dialog:newPaletteDialog
 
 import wx
-
+import wx.lib.intctrl
 from wx.lib.masked import NumCtrl
 
 def create(parent):
@@ -24,17 +24,23 @@ class NewPaletteDialog(wx.Dialog):
               title='Create New Palette')
         self.SetClientSize(wx.Size(265, 152))
 
-        self.sizeField = NumCtrl( 
-            self, id = -1, value = 0, pos=wx.Point(64, 24),
-            size=wx.Size(56, 21), style = 0, validator = wx.DefaultValidator,
-            name = "sizeField", integerWidth = 4, fractionWidth = 0, allowNone = False,
-            allowNegative = False, useParensForNegatives = False, groupDigits = False,
-            groupChar = ',', decimalChar = '.', min = 1, max = 4096, limited = False,
-            limitOnFieldChange = True, selectOnEntry = True, foregroundColour = "Black",
-            signedForegroundColour = "Red", emptyBackgroundColour = "White",
-            validBackgroundColour = "White", invalidBackgroundColour = "Yellow",
-            autoSize = True
-        )
+        self.sizeField = wx.lib.intctrl.IntCtrl(allow_long=False,
+              allow_none=False, default_color=wx.BLACK,
+              id=-1, limited=False, max=512, min=1,
+              name='heightField', oob_color=wx.RED, parent=self,
+              pos=wx.Point(64, 24), size=wx.Size(100, 21), style=0, value=256)        
+        
+        #self.sizeField = NumCtrl( 
+            #self, id = -1, value = 0, pos=wx.Point(64, 24),
+            #size=wx.Size(56, 21), style = 0, validator = wx.DefaultValidator,
+            #name = "sizeField", integerWidth = 4, fractionWidth = 0, allowNone = False,
+            #allowNegative = False, useParensForNegatives = False, groupDigits = False,
+            #groupChar = ',', decimalChar = '.', min = 1, max = 4096, limited = False,
+            #limitOnFieldChange = True, selectOnEntry = True, foregroundColour = "Black",
+            #signedForegroundColour = "Red", emptyBackgroundColour = "White",
+            #validBackgroundColour = "White", invalidBackgroundColour = "Yellow",
+            #autoSize = True
+        #)
         
         #self.sizeField = wx.TextCtrl(id=wxID_NEWPALETTEDIALOGTEXTCTRL1,
               #name='sizeField', parent=self, pos=wx.Point(64, 24),

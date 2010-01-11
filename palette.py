@@ -242,6 +242,14 @@ class ColoringBook(wx.lib.agw.flatnotebook.FlatNotebook):
 	page = ColoringPage(self)
 	self.AddPage(page)
 	
+	# How do we do this in the constructor?
+	style = self.GetWindowStyleFlag()
+	style |= wx.lib.agw.flatnotebook.FNB_X_ON_TAB
+	style |= wx.lib.agw.flatnotebook.FNB_MOUSE_MIDDLE_CLOSES_TABS
+	style |= wx.lib.agw.flatnotebook.FNB_NO_X_BUTTON
+	
+        self.SetWindowStyleFlag(style)		
+	
     def AddPage(self, page):
 	"""
 	Adds a page (tab) to this notebook	
@@ -359,7 +367,7 @@ class ColoringPage(wx.Panel):
 class ColoringButton(wx.lib.buttons.GenButton):
     def __init__(self, prnt, colorStr=u'#FFFFFF'):
 	wx.lib.buttons.GenButton.__init__(self, parent = prnt, id=-1, size = wx.Size(12, 12),
-	                                  style = wx.BU_AUTODRAW | wx.NO_FULL_REPAINT_ON_RESIZE | wx.NO_BORDER) 
+	                                  style = wx.BU_AUTODRAW | wx.NO_FULL_REPAINT_ON_RESIZE | wx.SIMPLE_BORDER) 
 	
 	#(self, parent, id=-1, label='',
                  #pos = wx.DefaultPosition, size = wx.DefaultSize,
@@ -376,6 +384,7 @@ class ColoringButton(wx.lib.buttons.GenButton):
 	self.actualColor = colorStr
 	self.perceivedColor = '#FFFFFF'
 	self.SetBezelWidth(0)
+	self.Border
 	#self.SetMargins(0, 0)
 	
 	self.__translateToClosestColor(colorStr)
