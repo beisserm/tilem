@@ -7,6 +7,7 @@ import numpy
 import events.paletteUpdateEvent as pue
 
 from dialogs.newPaletteDialog import NewPaletteDialog
+from dialogs.paletteNameDialog import PaletteNameDialog
 
 from cubecolourdialog import CubeColourDialog
 from wx.lib.agw.flatnotebook import FlatNotebook
@@ -243,7 +244,7 @@ class ColoringBook(wx.lib.agw.flatnotebook.FlatNotebook):
         wx.lib.agw.flatnotebook.FlatNotebook.__init__(self, prnt)
 	page = ColoringPage(self)
 	self.AddPage(page)
-	
+
 	# How do we do this in the constructor?
 	style = self.GetWindowStyleFlag()
 	style |= wx.lib.agw.flatnotebook.FNB_X_ON_TAB
@@ -264,7 +265,8 @@ class ColoringBook(wx.lib.agw.flatnotebook.FlatNotebook):
 	
     def _createRightClickMenu(self):
         self._rmenu = wx.Menu()
-        item = wx.MenuItem(self._rmenu, MENU_EDIT_RENAME_PAGE, "Rename Tab\tCtrl+F4", "Rename Tab")
+        item = wx.MenuItem(self._rmenu, MENU_EDIT_RENAME_PAGE, "Rename Tab", "Rename Tab")
+	self.Bind(wx.EVT_MENU, self.OnRenameTab, item)
         self._rmenu.AppendItem(item)
 	self.SetRightClickMenu(self._rmenu)
 	
@@ -273,6 +275,16 @@ class ColoringBook(wx.lib.agw.flatnotebook.FlatNotebook):
 	TODO: Get rid of me. Make event driven. 
 	'''
 	self.GetParent().OnPaletteUpdate()
+	
+    def OnRenameTab(self, event):
+	page = self.GetCurrentPage()
+	pIndex = self.GetPageIndex(page)
+	oldName = self.GetPageText(pIndex)
+	dlg = PaletteNameDialog(self, name=oldName)
+	if dlg.ShowModal() == wx.ID_OK:
+	    newName = dlg.GetName()
+	    self.SetPageText(pIndex, newName)
+	dlg.Destroy()
 	
 # -----------------------------------------------------------------------------
 """
