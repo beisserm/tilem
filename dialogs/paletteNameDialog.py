@@ -8,8 +8,8 @@ class PaletteNameDialog(wx.Dialog):
         self.SetClientSize(wx.Size(285, 105))        
         
         self.nameLabel = wx.StaticText(id=-1,
-              label='New Name', name='nameLabel', parent=self, pos=wx.Point(60, 28),
-              size=wx.Size(50, 13), style=0)
+              label='New Name', name='nameLabel', parent=self, pos=wx.Point(50, 28),
+              size=wx.Size(60, 13), style=0)
 
         self.nameField = wx.TextCtrl(self, -1, name, size=(96, -1), pos=wx.Point(128,24))
 

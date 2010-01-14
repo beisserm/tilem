@@ -282,16 +282,18 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	
 	shiftedBits = None
 
-	if bpp == 1:
-	    shiftedBits = numpy.right_shift(packedBits, 7)
-	elif bpp == 2:
-	    shiftedBits = numpy.right_shift(packedBits, 6)
-	elif bpp == 3:
-	    shiftedBits = numpy.right_shift(packedBits, 5)
-	elif bpp == 4:
-	    shiftedBits = numpy.right_shift(packedBits, 4)
-	elif bpp == 8:
-	    shiftedBits = packedBits
+	shiftFactor = (8-bpp)
+	shiftedBits = numpy.right_shift(packedBits, shiftFactor)
+	#if bpp == 1:
+	    #shiftedBits = numpy.right_shift(packedBits, 7)
+	#elif bpp == 2:
+	    #shiftedBits = numpy.right_shift(packedBits, 6)
+	#elif bpp == 3:
+	    #shiftedBits = numpy.right_shift(packedBits, 5)
+	#elif bpp == 4:
+	    #shiftedBits = numpy.right_shift(packedBits, 4)
+	#elif bpp == 8:
+	    #shiftedBits = packedBits
 	
 	#TODO Handle reversed linear order
 	if reversedOrder:

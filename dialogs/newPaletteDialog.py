@@ -40,7 +40,7 @@ class NewPaletteDialog(wx.Dialog):
 
         self.colorEncoding = wx.ComboBox(choices=bppSelections,
               id=wxID_NEWPALETTEDIALOGCOMBOBOX1, name='colorEncoding', parent=self,
-              pos=wx.Point(64, 64), size=wx.Size(130, 21), style=wx.CB_READONLY, value='colorEncoding')
+              pos=wx.Point(64, 64), size=wx.Size(130, 21), style=wx.CB_READONLY, value='4bpp CGA')
 
         self.OkButton = wx.Button(id=wx.ID_OK, label='OK',
               name='OkButton', parent=self, pos=wx.Point(48, 112),
