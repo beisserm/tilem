@@ -119,6 +119,7 @@ class PaletteFrame(wx.MiniFrame):
         self.book = ColoringBook(self)	
 	
 	self.__createPaletteMenu()
+        self.Bind(pue.EVT_BUTTON_CLICKPOS,  self.CatchBeginningPaletteItem, id=self.book.GetId())
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.book, 1, wx.EXPAND)
@@ -126,6 +127,10 @@ class PaletteFrame(wx.MiniFrame):
         self.SetSizer(sizer)
         self.Show(True)
 
+    def CatchBeginningPaletteItem(self, evt):
+	print 'Got it!'
+	print evt
+	
     def OnNew(self, evt):
 	"""
 	
@@ -135,9 +140,11 @@ class PaletteFrame(wx.MiniFrame):
 	if paletteDlg.ShowModal() == wx.ID_OK:
 	    size = paletteDlg.GetSize()
 	    colorEncoding = paletteDlg.GetColorEncoding()
+	    self.Freeze()
 	    page = ColoringPage(self, size, colorEncoding)
-	    self.book.AddPage(page)
+	    self.book.AddPage(page)   
 	    page.UpdateAll()
+	    self.Thaw()	 	    
 	    self.Refresh()
 	    
     def OnRandomize(self, evt):
@@ -162,7 +169,6 @@ class PaletteFrame(wx.MiniFrame):
 		button.UpdateColor(newColor.upper())
 	
 	self.Refresh()
-	self.OnPaletteUpdate() 	
 
     def OnImportLocal(self, evt):
         pass
@@ -175,13 +181,7 @@ class PaletteFrame(wx.MiniFrame):
 	page = self.book.GetCurrentPage()
 	page.SetEncoding(selection)
 	page.UpdateAll()
-	self.Refresh()
-	
-    def OnPaletteUpdate(self):
-	'''
-	TODO: Get rid of me. Make event driven. 
-	'''
-	self.GetParent().OnColorPaletteUpdate()   	
+	self.Refresh()	
 	
     def GetCurrentPalette(self):
 	"""
@@ -200,7 +200,6 @@ class PaletteFrame(wx.MiniFrame):
         """
         Creates the 'Palette' menu on the menu bar
         """
-	
         def doBind(item, handler, updateUI=None):
             self.Bind(wx.EVT_MENU, handler, item)
             if updateUI is not None:
@@ -231,10 +230,10 @@ class PaletteFrame(wx.MiniFrame):
 	
 	# TODO: How should we handle setting the number of colors? Seems like we would always want at least
 	#       256(?)
-	#self.toolBar.NumColors = wx.TextCtrl(parent = self.toolBar, id=-1, value='512', size=wx.Size(50, 20), style=0,
-	                                #pos=wx.Point(140, 1))
-	#self.toolBar.NumColors.SetMaxLength(5)
-        #self.toolBar.NumColors.SetInsertionPoint(0)	    
+	toolBar.NumColors = wx.TextCtrl(parent = toolBar, id=-1, value='512', size=wx.Size(50, 20), style=wx.TE_READONLY,
+	                                pos=wx.Point(140, 1))
+	toolBar.NumColors.SetMaxLength(5)
+        toolBar.NumColors.SetInsertionPoint(0)
 	
 	return toolBar
 
@@ -242,10 +241,10 @@ class PaletteFrame(wx.MiniFrame):
 class ColoringBook(wx.lib.agw.flatnotebook.FlatNotebook):
     def __init__(self, prnt):
         wx.lib.agw.flatnotebook.FlatNotebook.__init__(self, prnt)
+
 	page = ColoringPage(self)
 	self.AddPage(page)
 
-	# How do we do this in the constructor?
 	style = self.GetWindowStyleFlag()
 	style |= wx.lib.agw.flatnotebook.FNB_X_ON_TAB
 	style |= wx.lib.agw.flatnotebook.FNB_MOUSE_MIDDLE_CLOSES_TABS
@@ -262,12 +261,6 @@ class ColoringBook(wx.lib.agw.flatnotebook.FlatNotebook):
 	         The page (tab) to add to this notebook
 	"""
         wx.lib.agw.flatnotebook.FlatNotebook.AddPage(self, page, page.GetTitle())
-	
-    def OnPaletteUpdate(self):
-	'''
-	TODO: Get rid of me. Make event driven. 
-	'''
-	self.GetParent().OnPaletteUpdate()
 	
     def OnRenameTab(self, event):
 	page = self.GetCurrentPage()
@@ -320,11 +313,11 @@ class ColoringPage(ScrolledPanel):
 	for color in range(size):
 	    self.__createButton()
 
-    def OnPickColor(self, event):
+    def OnPickColor(self, evt):
 	"""
 	Changes the color in the current palette based upon user input
 	"""
-	buttonObject = event.GetEventObject()
+	buttonObject = evt.GetEventObject()
 	backgroundColor = buttonObject.GetBackgroundColour()
 	colordlg = CubeColourDialog(self, prevColor=backgroundColor)
 	
@@ -333,23 +326,41 @@ class ColoringPage(ScrolledPanel):
 	    buttonObject.UpdateColor(rgbColor)
 	    self.OnPaletteUpdate()              
 	    colordlg.Destroy()
-	
-	event.Skip()
+
+    def OnLeftDown(self, event):
+        pt = event.GetPosition()
+        evt = MyEvent(myEVT_BUTTON_CLICKPOS, self.GetId())
+        evt.SetMyVal(pt)
+        #print id(evt), sys.getrefcount(evt)
+        self.GetEventHandler().ProcessEvent(evt)
+        #print id(evt), sys.getrefcount(evt)
+        event.Skip()	    
 	    
     def OnPaletteUpdate(self):
 	'''
-	TODO: Get rid of me. Make event driven. 
+	Posts to the top level MDI Frame
 	'''
-	self.GetParent().OnPaletteUpdate()
-	#evt = pue.PaletteUpdateEvent(pue.myEVT_PALETTE_UPDATE, self.GetId())
+	#self.GetParent().OnPaletteUpdate()
+	evt = pue.MyEvent(pue.myEVT_BUTTON_CLICKPOS, id=self.GetId())
+#	event = MyEvent(myEVT_CUSTOM, self.GetId())
+#	event.SetMyVal('here is some custom data')
+#	self.GetEventHandler().ProcessEvent(event)	
+	
         #evt.SetMyVal(pt)
-        #print id(evt), sys.getrefcount(evt)
+	print 'making it'
+        print id(evt)
 	#print self.GetParent().GetParent().GetParent()
-	#wx.PostEvent(self.GetParent().GetParent().GetParent(), evt)	
+	wx.PostEvent(self.GetParent().GetParent(), evt)	
+	#self.GetEventHandler().ProcessEvent(evt)
         #self.GetEventHandler().ProcessEvent(evt)
         #print id(evt), sys.getrefcount(evt)
         #evt.Skip()
+	evt.Skip()
 	
+    def OnSetBeginningColor(self, evt):
+	buttonObject = evt.GetEventObject()
+	buttonNum = self.colorEntries.index(buttonObject) + 1
+	self.getTool
 
     def UpdateAll(self):
 	for entry in self.colorEntries:
@@ -373,10 +384,10 @@ class ColoringPage(ScrolledPanel):
 	         6 digit RGB Hex string preceeded by a '#'
 	"""
 	colorBox = ColoringButton(prnt=self, colorStr=color)
-	self.Bind(wx.EVT_BUTTON, self.OnPickColor, colorBox)
+	colorBox.Bind(wx.EVT_BUTTON, self.OnPickColor, colorBox)
+	colorBox.Bind(wx.EVT_RIGHT_UP, self.OnSetBeginningColor, colorBox)
 	self.colorEntries.append(colorBox)
 	self.sizer.Add(colorBox, 0, wx.ALL, 1)
-	#self.flowSizer.Add(colorBox, 0, wx.ALL, 2)
 
 # -----------------------------------------------------------------------------
 class ColoringButton(wx.lib.buttons.GenButton):
@@ -409,17 +420,12 @@ class ColoringButton(wx.lib.buttons.GenButton):
     def UpdateColor(self, colorStr):
 	self.__translateToClosestColor(colorStr)
 	self.__setToolTip(self.perceivedColor)
-    
-    #def UpdateColorFromPicker(self, color):
-	#clrString = self.__sanitizeColorString(color)
-	#self.__translateToClosestColor(clrString)
-	#self.__setToolTipFromPicker(self.perceivedColor)
 
     def __translateToClosestColor(self, colorStr):
 	translator = self.GetParent().GetEncoding()
 	
 	if(translator == '4bpp CGA'):
-	    self.__translateClosestIndexedColor(colorStr, egaPalette)
+	    self.__translateClosestIndexedColor(colorStr, cgaPalette)
 	elif(translator == '6bpp NES'):
 	    self.__translateClosestIndexedColor(colorStr, nesPalette)
 	elif(translator == '8bpp EGA'):

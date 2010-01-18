@@ -1,9 +1,12 @@
 import wx
 
-myEVT_PALETTE_UPDATE = wx.NewEventType()
-EVT_PALETTE_UPDATE = wx.PyEventBinder(myEVT_PALETTE_UPDATE, 1)
+myEVT_BUTTON_CLICKPOS = wx.NewEventType()
+EVT_BUTTON_CLICKPOS = wx.PyEventBinder(myEVT_BUTTON_CLICKPOS, 1)
 
-class PaletteUpdateEvent(wx.PyCommandEvent):
+#----------------------------------------------------------------------
+
+
+class MyEvent(wx.PyCommandEvent):
     def __init__(self, evtType, id):
         wx.PyCommandEvent.__init__(self, evtType, id)
         self.myVal = None
