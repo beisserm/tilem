@@ -1,3 +1,5 @@
+#from __future__ import with_statemen
+
 import math
 import numpy
 import random
@@ -15,7 +17,7 @@ from wx.lib.scrolledpanel import ScrolledPanel
 
 from wx.lib.buttons import GenButton
 
-from utils.enthoughtSizer import FlowSizer
+from utils.flowSizer import FlowSizer
 
 
 [ID_Self, ID_NewPalette, ID_ImportSaveState, ID_ImportFromThisFile, 
@@ -90,7 +92,14 @@ egaPalette = [
 bppSelections = ['4bpp CGA', '6bpp NES', '8bpp EGA', '9bpp RGB(333)', '15bpp RGB(555)', 
 	                           '16bpp RGB(565)', '24bpp RGB(888)', '32bpp ARGB(8888)']
 
-FRAME_SIZE = wx.Size(275, 325)
+saveStateFilter = "All supported formats|*.fc*;*.gs*;*.st*;*.zs*|\
+NESticle Save States (*.st)|*.st*|\
+FCEUltra Save States (*.fc)|*.fc*|\
+Genecyst/Kega/Gens Save States (*.gs)|*.gs*|\
+ZSNES Save States (*.zs)|*.zs*|\
+All files (*.*)|*.*"
+
+FRAME_SIZE = wx.Size(240, 330)
 
 class bppEnum:
     """
@@ -119,17 +128,13 @@ class PaletteFrame(wx.MiniFrame):
         self.book = ColoringBook(self)	
 	
 	self.__createPaletteMenu()
-        self.Bind(pue.EVT_BUTTON_CLICKPOS,  self.CatchBeginningPaletteItem, id=self.book.GetId())
+        self.Bind(pue.EVT_PALETTE_POSITION,  self.OnPalettePos, self.book.GetCurrentPage())
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.book, 1, wx.EXPAND)
 	sizer.Add(self.toolBar, 0, wx.EXPAND)
         self.SetSizer(sizer)
         self.Show(True)
-
-    def CatchBeginningPaletteItem(self, evt):
-	print 'Got it!'
-	print evt
 	
     def OnNew(self, evt):
 	"""
@@ -140,11 +145,13 @@ class PaletteFrame(wx.MiniFrame):
 	if paletteDlg.ShowModal() == wx.ID_OK:
 	    size = paletteDlg.GetSize()
 	    colorEncoding = paletteDlg.GetColorEncoding()
-	    self.Freeze()
-	    page = ColoringPage(self, size, colorEncoding)
-	    self.book.AddPage(page)   
+	    title = paletteDlg.GetName()
+	    self.book.Freeze()
+	    page = ColoringPage(self, size, colorEncoding, title)	    
+	    self.book.AddPage(page)
 	    page.UpdateAll()
-	    self.Thaw()	 	    
+	    self.book.Thaw()
+	    self.Bind(pue.EVT_PALETTE_POSITION,  self.OnPalettePos, page)
 	    self.Refresh()
 	    
     def OnRandomize(self, evt):
@@ -170,18 +177,94 @@ class PaletteFrame(wx.MiniFrame):
 	
 	self.Refresh()
 
+#####
+# Event Handlers
+#####
+
     def OnImportLocal(self, evt):
         pass
 
     def OnImportSaveState(self, evt):
-        pass 
+	"""
+	Handles loading a palette from a save state. 
+	
+	Currently supports:
+	    NESticle
+	    FCEUltra
+	    Genecyst/Kega/Gens
+	    ZSNES
+	    
+	Although it's trivial to add support for more
+	"""
+	def int2bin(n, count=24):
+	    """returns the binary of integer n, using count number of digits"""
+	    return "".join([str((n >> y) & 1) for y in range(count-1, -1, -1)])	
+	
+	def processPaletteString(rawString):
+	    # TODO: This is stupid, use numpy...
+	    print 'Doing something!'
+	    palette = []
+	    for i in xrange(len(rawString)):
+		# Stupid python binary printing hack
+		wx.Color
+		raw = "#".join([str((i >> y) & 1) for y in range(8-1, -1, -1)])
+		#red = int(raw[0:2])
+		#newColor = "#%02x%02x%02x" % (red, green, blue)	
+	
+	openDialog = wx.FileDialog(self, "Choose a file", "", "", saveStateFilter, wx.OPEN )
+	if openDialog.ShowModal() == wx.ID_OK:
+	    try:
+		fileName = openDialog.GetPath()
+		ext = fileName.split('.')[-1]
+		selectedFile = open(openDialog.GetPath(), mode='rb')		
+		palette = ""
+		
+		# Need to check all these offsets, might be off by 1
+		if ext.startswith('st'):
+		    # NESticle, PalSize = 32, offset = 22791
+		    selectedFile.seek(22791)
+		    palette = selectedFile.read(32)
+		    
+		elif ext.startswith('fc'):
+		    # FCEUltra, PalSize = 32, offset = 4276
+		    selectedFile.seek(4276)
+		    palette = selectedFile.read(32)
+		    
+		elif ext.startswith('gs'):
+		    # Kega/Gens, Palsize = 64, offset = 274 
+		    selectedFile.seek(274)
+		    palette = selectedFile.read(64)
+		    
+		elif ext.startswith('zs'):
+		    # ZSNES, Palsize = 256, offset = 52243
+		    selectedFile.seek(52243)
+		    palette = selectedFile.read(256)
+		    
+		else:
+		    print 'Unsupported file'
+		    
+		processPaletteString(palette)
+	    except IOError:
+		pass
+	    
+	openDialog.Destroy()		
     
     def OnSelectEncoding(self, evt):
 	selection = evt.GetString()
 	page = self.book.GetCurrentPage()
 	page.SetEncoding(selection)
 	page.UpdateAll()
-	self.Refresh()	
+	self.Refresh()
+	
+    def OnPalettePos(self, evt):
+	"""
+	Sets where the palette should 'begin' on the bottom toolbar text field.
+	This event passes to the MDI Parent frame (where it will be redirected
+	to the currently selected MDI child frame).
+	"""
+	pos = evt.GetPalettePos()
+	self.toolBar.NumColors.ChangeValue(str(pos))
+	evt.Skip()	
 	
     def GetCurrentPalette(self):
 	"""
@@ -228,12 +311,9 @@ class PaletteFrame(wx.MiniFrame):
 	    style=wx.CB_READONLY, value='8bpp EGA')
 	self.Bind(wx.EVT_COMBOBOX, self.OnSelectEncoding, toolBar.colorEncodings)	
 	
-	# TODO: How should we handle setting the number of colors? Seems like we would always want at least
-	#       256(?)
-	toolBar.NumColors = wx.TextCtrl(parent = toolBar, id=-1, value='512', size=wx.Size(50, 20), style=wx.TE_READONLY,
+	toolBar.NumColors = wx.TextCtrl(parent = toolBar, id=-1, value='1', size=wx.Size(50, 20), style=wx.TE_READONLY,
 	                                pos=wx.Point(140, 1))
 	toolBar.NumColors.SetMaxLength(5)
-        toolBar.NumColors.SetInsertionPoint(0)
 	
 	return toolBar
 
@@ -289,7 +369,6 @@ class ColoringPage(ScrolledPanel):
     A basic panel that's represents a tab on the color palette window.
     """
     
-    # TODO: Add 'title' option to create new palette dialog
     def __init__(self, prnt, size=256, encoding='8bpp EGA', title='Default'):    
 	"""
 	@param size
@@ -324,43 +403,28 @@ class ColoringPage(ScrolledPanel):
 	if colordlg.ShowModal() == wx.ID_OK:
 	    rgbColor = colordlg.GetHexColor()
 	    buttonObject.UpdateColor(rgbColor)
-	    self.OnPaletteUpdate()              
-	    colordlg.Destroy()
-
-    def OnLeftDown(self, event):
-        pt = event.GetPosition()
-        evt = MyEvent(myEVT_BUTTON_CLICKPOS, self.GetId())
-        evt.SetMyVal(pt)
-        #print id(evt), sys.getrefcount(evt)
-        self.GetEventHandler().ProcessEvent(evt)
-        #print id(evt), sys.getrefcount(evt)
-        event.Skip()	    
-	    
+	    self.OnPaletteUpdate()
+	    colordlg.Destroy()  
+    
     def OnPaletteUpdate(self):
-	'''
-	Posts to the top level MDI Frame
-	'''
-	#self.GetParent().OnPaletteUpdate()
-	evt = pue.MyEvent(pue.myEVT_BUTTON_CLICKPOS, id=self.GetId())
-#	event = MyEvent(myEVT_CUSTOM, self.GetId())
-#	event.SetMyVal('here is some custom data')
-#	self.GetEventHandler().ProcessEvent(event)	
-	
-        #evt.SetMyVal(pt)
-	print 'making it'
-        print id(evt)
-	#print self.GetParent().GetParent().GetParent()
-	wx.PostEvent(self.GetParent().GetParent(), evt)	
-	#self.GetEventHandler().ProcessEvent(evt)
-        #self.GetEventHandler().ProcessEvent(evt)
-        #print id(evt), sys.getrefcount(evt)
-        #evt.Skip()
-	evt.Skip()
-	
-    def OnSetBeginningColor(self, evt):
-	buttonObject = evt.GetEventObject()
-	buttonNum = self.colorEntries.index(buttonObject) + 1
-	self.getTool
+	"""
+	TODO: Indicates the user has changed a color in the palette. Post to
+	the MDI Parent Frame.
+	"""
+	pass
+	    
+    def OnPalettePos(self, event):
+	"""
+	Indicates that the user wants to change where the palette should 
+	'virtually' begin. Handled by the PaletteFrame.
+	"""
+	try:
+	    button = event.GetEventObject()
+	    buttonPos = self.colorEntries.index(button) + 1
+	    evt = pue.PalettePosEvt(pue.theEVT_PALETTE_POSITION, id=self.GetId(), pos=buttonPos)
+	    self.GetEventHandler().ProcessEvent(evt)
+	except ValueError, exception:
+	    print exception
 
     def UpdateAll(self):
 	for entry in self.colorEntries:
@@ -385,7 +449,7 @@ class ColoringPage(ScrolledPanel):
 	"""
 	colorBox = ColoringButton(prnt=self, colorStr=color)
 	colorBox.Bind(wx.EVT_BUTTON, self.OnPickColor, colorBox)
-	colorBox.Bind(wx.EVT_RIGHT_UP, self.OnSetBeginningColor, colorBox)
+	colorBox.Bind(wx.EVT_RIGHT_UP, self.OnPalettePos, colorBox)
 	self.colorEntries.append(colorBox)
 	self.sizer.Add(colorBox, 0, wx.ALL, 1)
 
