@@ -1,24 +1,22 @@
 #from __future__ import with_statemen
-
+import csv
 import math
 import numpy
+import os
 import random
+import re
 import wx
 
 #from cubecolourdialog import CubeColourDialog
-import events.paletteUpdateEvent as pue
-
-from dialogs.newPaletteDialog import NewPaletteDialog
-from dialogs.paletteNameDialog import PaletteNameDialog
+import events.customEvent as ce
 
 from cubecolourdialog import CubeColourDialog
-from wx.lib.agw.flatnotebook import FlatNotebook
-from wx.lib.scrolledpanel import ScrolledPanel
-
-from wx.lib.buttons import GenButton
-
+from dialogs.newPaletteDialog import NewPaletteDialog
+from dialogs.paletteNameDialog import PaletteNameDialog
 from utils.flowSizer import FlowSizer
-
+from wx.lib.agw.flatnotebook import FlatNotebook
+from wx.lib.buttons import GenButton
+from wx.lib.scrolledpanel import ScrolledPanel
 
 [ID_Self, ID_NewPalette, ID_ImportSaveState, ID_ImportFromThisFile, 
  ID_Randomize, ID_MenuBar, ID_MENU_EDIT_RENAME_PAGE] = [wx.NewId() for num in range(7)]
@@ -101,19 +99,6 @@ All files (*.*)|*.*"
 
 FRAME_SIZE = wx.Size(240, 330)
 
-class bppEnum:
-    """
-    Unused Enum class
-    """
-    _4BPP_CGA  = 1
-    _6BPP_NES  = 2
-    _8BPP_EGA  = 3
-    _9BPP_RGB  = 4
-    _15BPP_RGB = 5
-    _16BPP_RGB = 6
-    _24BPP_RGB = 7
-    _32BPP_ARGB = 8
-
 # -----------------------------------------------------------------------------
 class PaletteFrame(wx.MiniFrame):
     """
@@ -128,7 +113,7 @@ class PaletteFrame(wx.MiniFrame):
         self.book = ColoringBook(self)	
 	
 	self.__createPaletteMenu()
-        self.Bind(pue.EVT_PALETTE_POSITION,  self.OnPalettePos, self.book.GetCurrentPage())
+        self.Bind(ce.EVT_PALETTE_POSITION,  self.OnPalettePos, self.book.GetCurrentPage())
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.book, 1, wx.EXPAND)
@@ -147,12 +132,59 @@ class PaletteFrame(wx.MiniFrame):
 	    colorEncoding = paletteDlg.GetColorEncoding()
 	    title = paletteDlg.GetName()
 	    self.book.Freeze()
-	    page = ColoringPage(self, size, colorEncoding, title)	    
+	    page = ColoringPage(self, size, colorEncoding, title)
 	    self.book.AddPage(page)
 	    page.UpdateAll()
 	    self.book.Thaw()
-	    self.Bind(pue.EVT_PALETTE_POSITION,  self.OnPalettePos, page)
+	    self.Bind(ce.EVT_PALETTE_POSITION,  self.OnPalettePos, page)
 	    self.Refresh()
+    
+    def OnOpen(self, evt):
+	"""
+	"""
+	openDialog = wx.FileDialog(self, "Choose a file", "", "", "All files (*.*)|*.*", wx.OPEN )
+	if openDialog.ShowModal() == wx.ID_OK:
+	    fileHandle = None
+	    fileName = None
+	    paletteStr = []
+	    
+	    try:
+		path = openDialog.GetPath()
+		fileHandle = open(path, mode='r')
+		fileName = os.path.basename(path)
+	    except IOError:
+		pass
+	    
+	    if fileHandle:
+		reader = csv.reader(fileHandle)
+		
+		# for every line in the file find every word on that line
+		# for every word on that line, check if it is a string of 
+		# the form '#RRGGBB'
+		try:
+		    for line in reader:
+			for item in line:
+			    temp = item.strip()[:7]
+			    matches = re.match("\#[0-9A-Fa-f]{6}", temp)
+			    if matches:
+				paletteStr.append(temp)
+		except csv.Error, e:
+		    print ('Error loading palette: line %d: %s' % (reader.line_num, e))
+  
+		size = len(paletteStr)
+		if size > 512:
+		    size = 512
+		    
+		title = fileName
+		self.book.Freeze()
+		page = ColoringPage(self, size, '8bpp EGA', title, data=paletteStr)
+		self.book.AddPage(page)
+		page.UpdateAll()
+		self.book.Thaw()
+		self.Bind(ce.EVT_PALETTE_POSITION,  self.OnPalettePos, page)
+		self.Refresh()
+		    
+	openDialog.Destroy()	 	
 	    
     def OnRandomize(self, evt):
 	"""
@@ -214,17 +246,25 @@ class PaletteFrame(wx.MiniFrame):
 	openDialog = wx.FileDialog(self, "Choose a file", "", "", saveStateFilter, wx.OPEN )
 	if openDialog.ShowModal() == wx.ID_OK:
 	    try:
-		fileName = openDialog.GetPath()
+		path = openDialog.GetPath()
+		fileName = os.path.basename(path)
 		ext = fileName.split('.')[-1]
 		selectedFile = open(openDialog.GetPath(), mode='rb')		
 		palette = ""
 		
+#<palettefilter extensions="tpl" colorformat="CF01" size="256" offset="4" endianness="big">
+#<description>Tile Layer Pro palette (*.tpl)</description>
+#</palettefilter>
+#<palettefilter extensions="pal" colorformat="RIFF" size="256" offset="24" endianness="big">
+#<description>Windows Palette (*.pal)</description>		
 		# Need to check all these offsets, might be off by 1
 		if ext.startswith('st'):
 		    # NESticle, PalSize = 32, offset = 22791
 		    selectedFile.seek(22791)
 		    palette = selectedFile.read(32)
-		    
+		    for i in palette:
+			print i
+			
 		elif ext.startswith('fc'):
 		    # FCEUltra, PalSize = 32, offset = 4276
 		    selectedFile.seek(4276)
@@ -291,13 +331,14 @@ class PaletteFrame(wx.MiniFrame):
         menubar = wx.MenuBar()
 		
         paletteMenu = wx.Menu()
-        doBind(paletteMenu.Append(ID_NewPalette, "New", "Open a file"), self.OnNew)	
-        doBind(paletteMenu.Append(ID_Randomize, "Randomize", "Open a file"), self.OnRandomize)
+        doBind(paletteMenu.Append(ID_NewPalette, "New", ""), self.OnNew)
+	doBind(paletteMenu.Append(-1, "Open", ""), self.OnOpen)
+        doBind(paletteMenu.Append(ID_Randomize, "Randomize", ""), self.OnRandomize)
 	
         importMenu = wx.Menu()
-	paletteMenu.AppendMenu(-1, "Import", importMenu)	
-        doBind(importMenu.Append(ID_ImportFromThisFile, "This File", "This File"), self.OnImportLocal)
-        doBind(importMenu.Append(ID_ImportSaveState, "Save State", "Save State"), self.OnImportSaveState)
+	paletteMenu.AppendMenu(-1, "Import", importMenu)
+        doBind(importMenu.Append(ID_ImportFromThisFile, "This File", ""), self.OnImportLocal)
+        doBind(importMenu.Append(ID_ImportSaveState, "Save State", ""), self.OnImportSaveState)
 	
         menubar.Append(paletteMenu, "Palette")
         self.SetMenuBar(menubar)
@@ -322,7 +363,7 @@ class ColoringBook(wx.lib.agw.flatnotebook.FlatNotebook):
     def __init__(self, prnt):
         wx.lib.agw.flatnotebook.FlatNotebook.__init__(self, prnt)
 
-	page = ColoringPage(self)
+	page = ColoringPage(self, data=defaultPalette)
 	self.AddPage(page)
 
 	style = self.GetWindowStyleFlag()
@@ -360,7 +401,7 @@ class ColoringBook(wx.lib.agw.flatnotebook.FlatNotebook):
         item = wx.MenuItem(rmenu, ID_MENU_EDIT_RENAME_PAGE, "Rename Tab", "Rename Tab")
 	self.Bind(wx.EVT_MENU, self.OnRenameTab, item)
         rmenu.AppendItem(item)
-	self.SetRightClickMenu(rmenu)	
+	self.SetRightClickMenu(rmenu)
 	
 # -----------------------------------------------------------------------------
 
@@ -369,7 +410,7 @@ class ColoringPage(ScrolledPanel):
     A basic panel that's represents a tab on the color palette window.
     """
     
-    def __init__(self, prnt, size=256, encoding='8bpp EGA', title='Default'):    
+    def __init__(self, prnt, size=256, encoding='8bpp EGA', title='Default', data=None):    
 	"""
 	@param size
 		  The number of colors contained in this palette (1-512)
@@ -377,6 +418,8 @@ class ColoringPage(ScrolledPanel):
 		  A valid bpp Selection
 	@param title 
 		  The text displayed on the tab to identify this palette
+	#param data
+	          List of colors to be used for the palette '#RRGGBB'
 	"""    	
 	ScrolledPanel.__init__(self, prnt)
 	self.sizer = FlowSizer()
@@ -387,10 +430,14 @@ class ColoringPage(ScrolledPanel):
 	self.size = size
 	self.encoding = encoding
 	self.title = title
-	self.colorEntries = [] # Buttons
-        	
-	for color in range(size):
-	    self.__createButton()
+	self.colorButtons = [] # Each button corresponds to 1 palette color
+
+	if data:
+	    for color in data:
+		self.__createButton(color)
+	else:
+	    for color in range(size):
+		self.__createButton()
 
     def OnPickColor(self, evt):
 	"""
@@ -420,21 +467,21 @@ class ColoringPage(ScrolledPanel):
 	"""
 	try:
 	    button = event.GetEventObject()
-	    buttonPos = self.colorEntries.index(button) + 1
-	    evt = pue.PalettePosEvt(pue.theEVT_PALETTE_POSITION, id=self.GetId(), pos=buttonPos)
+	    buttonPos = self.colorButtons.index(button) + 1
+	    evt = ce.PalettePosEvt(ce.theEVT_PALETTE_POSITION, id=self.GetId(), pos=buttonPos)
 	    self.GetEventHandler().ProcessEvent(evt)
 	except ValueError, exception:
 	    print exception
 
     def UpdateAll(self):
-	for entry in self.colorEntries:
+	for entry in self.colorButtons:
 	    entry.UpdateSelf()	
 
     def GetTitle(self):
 	return self.title
 
     def GetColorEntries(self):
-	return self.colorEntries
+	return self.colorButtons
 
     def GetEncoding(self):
 	return self.encoding
@@ -450,7 +497,7 @@ class ColoringPage(ScrolledPanel):
 	colorBox = ColoringButton(prnt=self, colorStr=color)
 	colorBox.Bind(wx.EVT_BUTTON, self.OnPickColor, colorBox)
 	colorBox.Bind(wx.EVT_RIGHT_UP, self.OnPalettePos, colorBox)
-	self.colorEntries.append(colorBox)
+	self.colorButtons.append(colorBox)
 	self.sizer.Add(colorBox, 0, wx.ALL, 1)
 
 # -----------------------------------------------------------------------------
@@ -464,7 +511,7 @@ class ColoringButton(wx.lib.buttons.GenButton):
 	#self.SetBezelWidth(0)
 	
 	self.__translateToClosestColor(colorStr)
-	self.__setToolTip()
+	self.__setToolTip(colorStr)
     
     def GetActualColor(self):
 	return self.actualColor

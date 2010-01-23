@@ -1,13 +1,12 @@
-import wx
 import images
+import math
+import numpy
 import os
 import stat
+import wx
 
-import numpy
-import math
 from threading import Thread
-
-from utils.enthoughtSizer import FlowSizer
+import utils.flowSizer as FlowSizer
 
 zoomSelections = ['50%', '75%', '100%', '125%', '150%', '175%', '200%', '225%', 
                   '250%', '275%', '300%', '350%', '400%', '450%', '500%', 
@@ -39,7 +38,7 @@ class CanvasFrame(wx.MDIChildFrame):
     TODO: Use a sizer for comboBoxes, add buttons?
     """
     def __init__(self, prnt, fileStr=None, fileSize=None):
-	'''
+	"""
 	Constructor
 	@param fileStr
 	         The name of the file to open. Only used when opening an
@@ -47,7 +46,7 @@ class CanvasFrame(wx.MDIChildFrame):
 	@param fileSize
 		 The size (in bytes) of a new file to create. Only used when
 		 creating a new file.
-	'''
+	"""
 	wx.MDIChildFrame.__init__(self, parent=prnt)
 
 	vbox = wx.BoxSizer(wx.VERTICAL)
@@ -115,51 +114,51 @@ class CanvasFrame(wx.MDIChildFrame):
 #####
 
     def SetTileGrid(self, val=False):
-	'''
+	"""
 	Passthrough function that turns the tile grid on/off
-	'''	
+	"""	
 	self.canvas.SetTileGrid(val)
 	self.canvas.DoDrawing()
 	self.canvas.Refresh()	
 	
     def SetPixelGrid(self, val=False):
-	'''
+	"""
 	Passthrough function that turns the pixel grid on/off
-	'''
+	"""
 	self.canvas.SetPixelGrid(val)
 	self.canvas.DoDrawing()
 	self.canvas.Refresh()	
 
     def SetCanvasSize(self, rows, columns):
-	'''
+	"""
 	Passthrough function to set the number of rows and columns that should
 	be in the viewable area. 
-	'''
+	"""
 	self.canvas.SetCanvasSize(rows, columns)
 	self.canvas.UpdateIndexedBitmap()
 	self.canvas.DoDrawing()
 	self.canvas.Refresh()	 
 	
     def SetTileSize(self, width, height):
-	'''
+	"""
 	Passthrough function to set the width and height of the tile (sprite)
 	size
-	'''
+	"""
 	self.canvas.SetTileSize(width, height)
 	self.canvas.UpdateIndexedBitmap()
 	self.canvas.DoDrawing()
 	self.canvas.Refresh()	
     
     def GetCanvasSize(self):
-	'''
+	"""
 	Passthrough function to ge the current canvas size.
-	'''
+	"""
 	return self.canvas.GetCanvasSize()
     
     def GetTileSize(self):
-	'''
+	"""
 	Passthrough function to get the current tile size.
-	'''
+	"""
 	return self.canvas.GetTileSize()
     
 #double a[2][4] = { { 1, 2, 3, 4 },
@@ -443,64 +442,64 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	return self.bpp
 
     def GetTileSize(self):
-	'''
+	"""
 	Returns the current tile size [width, height]
-	'''
+	"""
 	return [self.tileWidth, self.tileHeight]
     
     def SetTileSize(self, width, height):
-	'''
+	"""
 	Updates the canvas tile size
 	@param width
 	         int (1-128)
 	@param height
 	         int (1-128)
-	'''
+	"""
 	self.tileWidth = width
 	self.tileHeight = height
 
     def GetCanvasSize(self):
-	'''
+	"""
 	Returns the current canvas size [rows, cols]
-	'''
+	"""
 	return [self.rows, self.columns]	
     
     def SetCanvasSize(self, rows, columns):
-	'''
+	"""
 	Updates the number of rows/columns that should be displayed on the 
 	canvas (DC)
 	@param rows
 	         int (1-128)
 	@param columns
 	         int (1-128)
-	'''
+	"""
 	self.rows = rows
 	self.columns = columns
     
     def SetFileSize(self, byteSize=1):
-	'''
+	"""
 	Sets the filesize. Only used when making a 'New' File.
 	@param byteSize
 	         Size of file in bytes
-	'''
+	"""
 	self.fileSize = byteSize	
 	    
     def SetTileGrid(self, val=False):
-	'''
+	"""
 	Toggles the tile grid setting
-	'''
+	"""
 	self.tileGrid = val
 	    
     def SetPixelGrid(self, val=False):
-	'''
+	"""
 	Toggles the pixel grid setting
-	'''
+	"""
 	self.pixelGrid = val
 	
     def SetZoom(self, zoomScale):
-	'''
+	"""
 	Updates the zoom factor and redraws the image with the new scaling
-	'''
+	"""
 	self.zoomConstant = zoomScale
 	self._scaleImage()
     
@@ -509,12 +508,12 @@ class ScrolledCanvas(wx.ScrolledWindow):
 #####
 
     def _calcLogicalBmpSize(self, length):
-	'''
+	"""
 	Figures out the logical size of the bitmap to be displayed. This is not
 	the entire file and it is not adjusted for zoom/displaying purposes
 	@param length
 	         int length of the current working array
-	'''
+	"""
 	fullBmpWidth = self.tileWidth * self.columns
 	fullBmpHeight = self.tileHeight * self.rows
 	fullBmpSize = fullBmpWidth * fullBmpHeight
@@ -550,10 +549,10 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	return logicalBmpSize
     
     def _scaleImage(self):
-	'''
+	"""
 	Resizes the current bitmap. Called by selecting a zoom size from the
 	dropdown
-	'''
+	"""
 	image = self.logicalBmp.ConvertToImage()
 	width = self.tileWidth * self.columns * self.zoomConstant
 	height = self.tileHeight * self.rows * self.zoomConstant
@@ -562,9 +561,9 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	self.displayBmp = img.ConvertToBitmap()  
 	
     def _drawTileGrid(self, dc):
-	'''
+	"""
 	Draws the tile grid
-	'''
+	"""
 	dc.SetPen(wx.Pen('RED', 1))
 	dc.SetBrush(wx.TRANSPARENT_BRUSH)
 	
@@ -588,21 +587,17 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	    dc.DrawLine(x0, y0, x1, y1)
 	    
     def _drawPixelGrid(self, dc):
-	'''
+	"""
 	Draws the pixel grid
-	'''
+	"""
 	dc.SetPen(wx.Pen(wx.Colour(128, 128, 128), 1))
 	dc.SetBrush(wx.TRANSPARENT_BRUSH)
 	
 	canvasWidth = self.tileWidth * self.columns * self.zoomConstant
 	canvasHeight = self.tileHeight * self.rows * self.zoomConstant
-	
-	# Don't know why we need this but we do...
-	if self.zoomConstant <= 8:
-	    self.zoomConstant = 8
 	    
-	# Draw rows	    
-	for i in range((self.rows * self.zoomConstant) + 1):
+	# Draw rows
+	for i in range((canvasHeight / self.zoomConstant) + 1):
 	    x0 = 0
 	    y0 = i * self.zoomConstant
 	    x1 = canvasWidth + 1
@@ -610,7 +605,7 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	    dc.DrawLine(x0, y0, x1, y1)	
 	    
 	# Draw columns
-	for i in range((self.columns * self.zoomConstant) + 1):
+	for i in range((canvasWidth / self.zoomConstant) + 1):
 	    x0 = i * self.zoomConstant
 	    y0 = 0
 	    x1 = i * self.zoomConstant
@@ -618,18 +613,18 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	    dc.DrawLine(x0, y0, x1, y1)	
 	
     def _getPalette(self):
-	'''
+	"""
 	Gets the palette from the palette frame.
 	CanvasFrame (parent ->) TilemFrame (has the ->) PaletteFrame	
-	'''
+	"""
 	return self.GetParent().GetParent().GetPalette()	
 
     
     def _processRemainingBytes(self, arrayBytes):
-	'''
+	"""
 	Spawns a new thread to take care of mapping the entire byte
 	array to their palette colors
-	'''
+	"""
 	
 	def lookup():
 	    self.rgbEndData = list(map(lambda x: self.paletteColors[x], arrayBytes))
