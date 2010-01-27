@@ -50,6 +50,7 @@ class ToolPanel(wx.MiniFrame):
             self.Bind(wx.EVT_BUTTON, handler, button)
 	    return button
 
+	# Tools
         self._makeSelectionButton = ButtonMaker(u'./icons/select-16.png', ID_Selection,
                                          wx.Point(4, 4), u'Make Selection ()', self.OnCanvasTool)
     
@@ -68,19 +69,20 @@ class ToolPanel(wx.MiniFrame):
         self._reColorButton = ButtonMaker(u'./icons/color-replace-16.png', ID_Recolor,
                                          wx.Point(32, 60), u'Recolor (R)', self.OnCanvasTool)
     
-	
+	# Shifts
         self._shiftLeftButton = ButtonMaker(u'./icons/shift-left-16.png', ID_ShiftLeft,
-                                         wx.Point(4, 92), u'Shift Left (Left)', self.OnCanvasArrangement)
+                                         wx.Point(4, 92), u'Shift Left (Left)', self.OnCanvasShift)
     
         self._shiftRightButton = ButtonMaker(u'./icons/shift-right-16.png', ID_ShiftRight,
-                                         wx.Point(32, 92), u'Shift Right (Right)', self.OnCanvasArrangement)
+                                         wx.Point(32, 92), u'Shift Right (Right)', self.OnCanvasShift)
     
         self._shiftUpButton = ButtonMaker(u'./icons/shift-up-16.png', ID_ShiftUp,
-                                         wx.Point(4, 120), u'Shift Up (Up)', self.OnCanvasArrangement)
+                                         wx.Point(4, 120), u'Shift Up (Up)', self.OnCanvasShift)
         
         self._shiftDownButton = ButtonMaker(u'./icons/shift-down-16.png', ID_ShiftDown,
-                                         wx.Point(32, 120), u'Shift Down (Down)', self.OnCanvasArrangement)
+                                         wx.Point(32, 120), u'Shift Down (Down)', self.OnCanvasShift)
 
+	# Arrangement
         self._scrollUpButton = ButtonMaker(u'./icons/page-up-16.png', ID_ScrollUp,
                                          wx.Point(4, 152), u'Scroll Up (PgUp)', self.OnCanvasArrangement)
     
@@ -105,9 +107,6 @@ class ToolPanel(wx.MiniFrame):
         self._byteForwardButton = ButtonMaker(u'./icons/byteForward-16.png', ID_ByteForward,
                                          wx.Point(32, 236), u'Byte Forward ()', self.OnCanvasArrangement)
 
-        #self._Button = ButtonMaker(u'./icons/zoom-16.png', ID_Zoom,
-                                         #wx.Point(4, 32), u'Zoom (Z)', self.OnCanvasArrangement)
-
         #self._drawLineButton = ButtonMaker(u'./icons/line-16.png', ID_DrawLine,
                                          #wx.Point(32, 60), u'Draw Line (O)', self.OnCanvasArrangement)                                           
         
@@ -116,7 +115,11 @@ class ToolPanel(wx.MiniFrame):
     def OnCanvasTool(self, event):
 	buttonId = event.GetEventObject().GetId()
 	pub.sendMessage('canvasTool', toolId=buttonId)
-    
+
+    def OnCanvasShift(self, event):
+	buttonId = event.GetEventObject().GetId()
+	pub.sendMessage('canvasShift', shiftId=buttonId)
+
     def OnCanvasArrangement(self, event):
 	buttonId = event.GetEventObject().GetId()
 	pub.sendMessage('canvasArrangement', actionId=buttonId)

@@ -97,7 +97,7 @@ class CanvasFrame(wx.MDIChildFrame):
 	    # linear reveresed order
 	    bpp = selection[0]
 	    self.canvas.SetBpp(bpp)
-	    self.canvas.UpdateIndexedBitmap(bpp, reversedOrder = True)
+	    self.canvas.UpdateIndexedBitmap(reversedOrder = True)
 	elif selection.find('planar') != -1:
 	    #self.canvas.CreatePlanarBitmap()
 	    pass
@@ -179,6 +179,7 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	wx.ScrolledWindow.__init__(self, parent, id, (0, 0), size=size, style=wx.SUNKEN_BORDER)	
 
 	pub.subscribe(self.OnCanvasArrangementMsg, 'canvasArrangement')
+	pub.subscribe(self.OnCanvasShiftMsg, 'canvasShift')
 	pub.subscribe(self.OnCanvasToolMsg, 'canvasTool')
 	
 	# filesize in bytes
@@ -280,7 +281,7 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	self.Bind(wx.EVT_MOTION, self.OnLeftButtonEvent)
 	self.Bind(wx.EVT_PAINT, self.OnPaint)
 	
-    def UpdateIndexedBitmap(self,isNew=False, reversedOrder=False):
+    def UpdateIndexedBitmap(self, reversedOrder=False):
 	"""
 	Creates/updates a bitmap image from a numpy array. Each entry in the 
 	array is assumed to be the index into the palette of the color that is 
@@ -288,22 +289,37 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	
 	The width and height of the bitmap is based upon the tile (sprite) size 
 	specified by the user.
-
-	@param bpp (int)
-	         The desired bpp's of the bitmap
 	"""
+	# uint8
 	workingBits = self.cachedBits[self.beginAddress:self.endAddress]
+	print workingBits[:16]
+	print '\n\n'
+	
 	shape = (int(math.ceil(workingBits.size / self.bpp)), self.bpp)	
 	workingBits = workingBits.reshape(shape)
 	
 	packedBits = numpy.packbits(workingBits, axis=1)
+
 	shiftFactor = (8-self.bpp)
 	shiftedBits = numpy.right_shift(packedBits, shiftFactor)
+	print 'shifted 1\n'
+	print shiftedBits[:16]
+	##TODO Handle reversed linear order
 	
-	#TODO Handle reversed linear order
-	if reversedOrder:
-	    pass
-	    
+	if reversedOrder == True:
+	    # There is no bit swap in numpy...
+	    seven = numpy.left_shift(shiftedBits, 7)  & 0b10000000
+	    six   = numpy.left_shift(shiftedBits, 5)  & 0b01000000
+	    five  = numpy.left_shift(shiftedBits, 3)  & 0b00100000
+	    four  = numpy.left_shift(shiftedBits, 1)  & 0b00010000
+	    three = numpy.right_shift(shiftedBits, 1) & 0b00001000
+	    two   = numpy.right_shift(shiftedBits, 3) & 0b00000100
+	    one   = numpy.right_shift(shiftedBits, 5) & 0b00000010
+	    zero  = numpy.right_shift(shiftedBits, 7) & 0b00000001
+	    shiftedBits = zero | one | two | three | four | five | six | seven
+	    print 'shifted 2\n'
+	    print shiftedBits[:16]
+
 	self.paletteColors = self._getPalette()
 	
 	# Figure out how big our bitmap should be
@@ -341,9 +357,6 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	
 	# We're done, account for the scaling factor and draw the bitmap
 	self._scaleImage()
-
-    def IndexedBmpUpdate(self):
-	pass
 	
     def OnPaint(self, event):
 	#if BUFFERED:
@@ -462,18 +475,9 @@ class ScrolledCanvas(wx.ScrolledWindow):
 		#self.endAddress = self.endAddress + pageSize
 	    #else:
 		#self.endAddress = self.endAddress + byte
-	addressOffset = 0
-		
-	if actionId == ToolPanel.ID_ShiftLeft:
-	    pass    
-	elif actionId == ToolPanel.ID_ShiftRight:
-	    pass	    
-	elif actionId == ToolPanel.ID_ShiftUp:
-	    pass	    
-	elif actionId == ToolPanel.ID_ShiftDown:
-	    pass	    	
+	addressOffset = 0	    	
 	
-	elif actionId == ToolPanel.ID_ScrollUp:	    
+	if actionId == ToolPanel.ID_ScrollUp:	    
 	    if self.beginAddress - pageSize < 0:
 		addressOffset = -self.beginAddress
 	    else:
@@ -518,6 +522,18 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	self.UpdateIndexedBitmap()
 	self.DoDrawing()
 	self.Refresh()
+	
+    def OnCanvasShiftMsg(self, shiftId):
+		
+	if shiftId == ToolPanel.ID_ShiftLeft:
+	    pass    
+	elif shiftId == ToolPanel.ID_ShiftRight:
+	    pass	    
+	elif shiftId == ToolPanel.ID_ShiftUp:
+	    pass	    
+	elif shiftId == ToolPanel.ID_ShiftDown:
+	    pass	
+	pass
 	
     def OnCanvasToolMsg(self, toolId):
 	"""
