@@ -90,11 +90,13 @@ class CanvasFrame(wx.MDIChildFrame):
 	selection = evt.GetString()
 	if (selection.find(',') == -1) and (selection.find('linear') != -1):
 	    #linear
-	    bpp = int(selection[0])
-	    self.canvas.UpdateIndexedBitmap(bpp)
+	    bpp = selection[0]
+	    self.canvas.SetBpp(bpp)
+	    self.canvas.UpdateIndexedBitmap()
 	elif (selection.find(',') != -1) and (selection.find('linear') != -1):
 	    # linear reveresed order
-	    bpp = int(selection[0])
+	    bpp = selection[0]
+	    self.canvas.SetBpp(bpp)
 	    self.canvas.UpdateIndexedBitmap(bpp, reversedOrder = True)
 	elif selection.find('planar') != -1:
 	    #self.canvas.CreatePlanarBitmap()
@@ -205,9 +207,9 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	# logical pixel in the bitmap will be 8x8
 	self.zoomConstant = zoomMapping['100%']
 	
-	# Column matrix of the raw bytes from the rom file. n x 1, where n is
-	# the number of bytes in the file.
-	self.fileBytes = None
+	# Column matrix of the raw rom file. n x 1, where n is the number of
+	# bits in the file.
+	self.cachedBits = None
 
 	# We keep track of 2 bitmaps. 1 is the logical 1-1 pixel mapping, and
 	# the display incorporates the zoom factor on the image
@@ -228,8 +230,25 @@ class ScrolledCanvas(wx.ScrolledWindow):
 		# Read a file one byte per element into an array. We read it 
 		# little endian, (right most bit being the LSB), but once it's
 		# in the buffer we can change it
-		self.bytesArray = numpy.fromfile(self.fileHandle, dtype=numpy.uint8)
-		self.UpdateIndexedBitmap(self.bpp, isNew=True)
+		bytesArray = numpy.fromfile(self.fileHandle, dtype=numpy.uint8)
+		
+		# Create column vector of bytes, so when we unpack a byte we will have 
+		# a nice (n x 8) vector to work with where each element is a single 
+		# bit. 
+		unpackedBits = numpy.unpackbits(bytesArray)		
+		_shape = (int(math.ceil(unpackedBits.size)), 1)
+		
+		# Decode into 1 bits per pixel.
+		unpackedBits = unpackedBits.reshape(_shape)
+		packedBits = numpy.packbits(unpackedBits, axis=1)
+		shiftedBits = numpy.right_shift(packedBits, 7)
+		
+		# We cache the bits here in 1bpp form so that future operations
+		# (with the current encoding scheme, ie linear) will be much 
+		# faster
+		self.cachedBits = shiftedBits
+		
+		self.UpdateIndexedBitmap(self.bpp)
 	    except IOError:
 		print 'Unable to open file: ', fileStr
 	else:
@@ -261,7 +280,7 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	self.Bind(wx.EVT_MOTION, self.OnLeftButtonEvent)
 	self.Bind(wx.EVT_PAINT, self.OnPaint)
 	
-    def UpdateIndexedBitmap(self, bpp=8, isNew=False, reversedOrder=False):
+    def UpdateIndexedBitmap(self,isNew=False, reversedOrder=False):
 	"""
 	Creates/updates a bitmap image from a numpy array. Each entry in the 
 	array is assumed to be the index into the palette of the color that is 
@@ -273,28 +292,13 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	@param bpp (int)
 	         The desired bpp's of the bitmap
 	"""
-	# Create column vector of bytes, so when we unpack a byte we will have 
-	# a nice (n x 8) vector to work with where each element is a single 
-	# bit. This allows us to decode arbitrary bits per pixel by 
-	# having a single row be the number of bits needed for a single 
-	# pixel
+	workingBits = self.cachedBits[self.beginAddress:self.endAddress]
+	shape = (int(math.ceil(workingBits.size / self.bpp)), self.bpp)	
+	workingBits = workingBits.reshape(shape)
 	
-	#begin address is in bits and we wants bytes
-	unpackedBits = numpy.unpackbits(self.bytesArray)
-	
-	self.bpp = int(bpp)
-	
-	_shape = (int(math.ceil(unpackedBits.size / bpp)), bpp)
-	unpackedBits = unpackedBits.reshape(_shape)
-	packedBits = numpy.packbits(unpackedBits, axis=1)
-	
-	shiftedBits = None
-
-	shiftFactor = (8-bpp)
+	packedBits = numpy.packbits(workingBits, axis=1)
+	shiftFactor = (8-self.bpp)
 	shiftedBits = numpy.right_shift(packedBits, shiftFactor)
-	shiftedBits = shiftedBits[self.beginAddress/bpp:self.endAddress]
-	#if bpp == 1:
-	    #shiftedBits = numpy.right_shift(packedBits, 7)
 	
 	#TODO Handle reversed linear order
 	if reversedOrder:
@@ -304,13 +308,11 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	
 	# Figure out how big our bitmap should be
 	# Fixme: This chops off partial rows and partial tiles
-	logicalWidth, logicalHeight = self._calcLogicalBmpSize(len(shiftedBits))
+	logicalWidth, logicalHeight = self._calcLogicalBmpSize(len(packedBits))
 	displayLength = logicalWidth * logicalHeight
 	
 	# Get the actual entry then lookup the entry in the palette table and
-	# copy the corresponding color entry into a new array. The main thread
-	# only processes enough to display a single screen to the user
-	# right away. We spawn another thread to process the entire file
+	# copy the corresponding color entry into a new array.
 	rgbArray = list(map(lambda x: self.paletteColors[x], shiftedBits[:displayLength].flatten()))
 	rgbArray2 = numpy.array(rgbArray[:displayLength], dtype=numpy.uint8)
 
@@ -372,8 +374,8 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	dc.DrawBitmap(self.displayBmp, 0, 0, False)
 	    
 	if self.pixelGrid:
-	    self._drawPixelGrid(dc)	
-	
+	    self._drawPixelGrid(dc)
+
 	if self.tileGrid:
 	    self._drawTileGrid(dc)
 
@@ -442,9 +444,7 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	"""
 	
 	pixelSize = self.bpp
-	print 'pixel size: ', pixelSize
 	tileSize = self.tileWidth * self.tileHeight * pixelSize
-	print 'tile size: ', tileSize
 	rowSize = self.columns * tileSize
 	pageSize = rowSize * self.rows
 	
@@ -473,26 +473,38 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	elif actionId == ToolPanel.ID_ShiftDown:
 	    pass	    	
 	
-	elif actionId == ToolPanel.ID_ScrollUp:
-	    addressOffset = -pageSize
+	elif actionId == ToolPanel.ID_ScrollUp:	    
+	    if self.beginAddress - pageSize < 0:
+		addressOffset = -self.beginAddress
+	    else:
+		addressOffset = -pageSize
 	    
-	elif actionId == ToolPanel.ID_ScrollDown:
+	elif actionId == ToolPanel.ID_ScrollDown:	    
 	    addressOffset = +pageSize
 	    
 	elif actionId == ToolPanel.ID_RowBack:
-	    addressOffset = -rowSize
+	    if self.beginAddress - rowSize < 0:
+		addressOffset = -self.beginAddress
+	    else:
+		addressOffset = -rowSize
 	
 	elif actionId == ToolPanel.ID_RowForward:
 	    addressOffset = +rowSize
 	
 	elif actionId == ToolPanel.ID_TileBack:
-	    addressOffset = -tileSize
+	    if self.beginAddress - tileSize < 0:
+		addressOffset = -self.beginAddress
+	    else:
+		addressOffset = -tileSize	    
 	
 	elif actionId == ToolPanel.ID_TileForward:
 	    addressOffset = +tileSize
 	
 	elif actionId == ToolPanel.ID_ByteBack:
-	    addressOffset = -pixelSize
+	    if self.beginAddress - pixelSize < 0:
+		addressOffset = -self.beginAddress
+	    else:
+		addressOffset = -pixelSize
 	    
 	elif actionId == ToolPanel.ID_ByteForward:
 	    addressOffset = +pixelSize
@@ -500,11 +512,10 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	else:
 	    print 'Invalid canvas arrangement message'
 
-	print 'address offset: ', addressOffset
 	self.beginAddress = self.beginAddress + addressOffset
 	self.endAddress = self.endAddress + addressOffset
 
-	self.UpdateIndexedBitmap(bpp=self.bpp)
+	self.UpdateIndexedBitmap()
 	self.DoDrawing()
 	self.Refresh()
 	
@@ -535,7 +546,16 @@ class ScrolledCanvas(wx.ScrolledWindow):
 #####
 
     def GetBpp(self):
+	"""
+	Returns the bpp for this canvas
+	"""
 	return self.bpp
+    
+    def SetBpp(self, bpp):
+	"""
+	Sets the bpp for this canvas
+	"""
+	self.bpp = int(bpp)    
 
     def GetTileSize(self):
 	"""

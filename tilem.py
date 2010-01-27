@@ -18,8 +18,6 @@ from dialogs.aboutDialog import AboutDialog
 from ToolPanel import ToolPanel
 from cubecolourdialog import CubeColourDialog
 
-import events.customEvent as ce
-
 #----------------------------------------------------------------------
 ID_New  = wx.NewId()
 ID_Exit = wx.NewId()

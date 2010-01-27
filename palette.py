@@ -8,7 +8,7 @@ import re
 import wx
 
 #from cubecolourdialog import CubeColourDialog
-import events.customEvent as ce
+#import events.customEvent as ce
 
 from cubecolourdialog import CubeColourDialog
 from dialogs.newPaletteDialog import NewPaletteDialog
