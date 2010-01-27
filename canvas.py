@@ -6,6 +6,9 @@ import stat
 import wx
 
 from threading import Thread
+from pubsub import pub
+
+import ToolPanel
 import utils.flowSizer as FlowSizer
 
 zoomSelections = ['50%', '75%', '100%', '125%', '150%', '175%', '200%', '225%', 
@@ -48,7 +51,7 @@ class CanvasFrame(wx.MDIChildFrame):
 		 creating a new file.
 	"""
 	wx.MDIChildFrame.__init__(self, parent=prnt)
-
+	
 	vbox = wx.BoxSizer(wx.VERTICAL)
 
 	self.toolBar = wx.ToolBar(id=-1, name='toolBar1', parent=self, pos=wx.DefaultPosition,
@@ -173,9 +176,12 @@ class ScrolledCanvas(wx.ScrolledWindow):
     def __init__(self, parent, id = -1, size = wx.DefaultSize, fileStr = None, fileSize=None):
 	wx.ScrolledWindow.__init__(self, parent, id, (0, 0), size=size, style=wx.SUNKEN_BORDER)	
 
+	pub.subscribe(self.OnCanvasArrangementMsg, 'canvasArrangement')
+	pub.subscribe(self.OnCanvasToolMsg, 'canvasTool')
+	
 	# filesize in bytes
 	self.fileSize = fileSize
-	self.fileHandle = None	
+	self.fileHandle = None
 	
 	self.columns = 16
 	self.rows = 16
@@ -185,6 +191,12 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	self.tileWidth = 8
 	self.tileHeight = 8
 	
+	self.bpp = 8
+	
+	self.beginAddress = 0x00
+	self.currentAddress = 0x00	
+	self.endAddress = self.bpp * self.tileWidth * self.tileHeight * self.columns * self.rows
+
 	self.tileGrid = False
 	self.pixelGrid = False
 	
@@ -197,9 +209,6 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	# the number of bytes in the file.
 	self.fileBytes = None
 
-	# This is the completed processed fileBytes
-	self.rgbEndData = []	
-
 	# We keep track of 2 bitmaps. 1 is the logical 1-1 pixel mapping, and
 	# the display incorporates the zoom factor on the image
 	self.logicalBmp = None
@@ -208,8 +217,6 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	self.paletteColors = self._getPalette()
 	
 	self.numTiles = 0
-	
-	self.bpp = 8
 	
 	if fileStr:
 	    try:
@@ -265,12 +272,14 @@ class ScrolledCanvas(wx.ScrolledWindow):
 
 	@param bpp (int)
 	         The desired bpp's of the bitmap
-	""" 
+	"""
 	# Create column vector of bytes, so when we unpack a byte we will have 
 	# a nice (n x 8) vector to work with where each element is a single 
 	# bit. This allows us to decode arbitrary bits per pixel by 
 	# having a single row be the number of bits needed for a single 
 	# pixel
+	
+	#begin address is in bits and we wants bytes
 	unpackedBits = numpy.unpackbits(self.bytesArray)
 	
 	self.bpp = int(bpp)
@@ -283,16 +292,9 @@ class ScrolledCanvas(wx.ScrolledWindow):
 
 	shiftFactor = (8-bpp)
 	shiftedBits = numpy.right_shift(packedBits, shiftFactor)
+	shiftedBits = shiftedBits[self.beginAddress/bpp:self.endAddress]
 	#if bpp == 1:
 	    #shiftedBits = numpy.right_shift(packedBits, 7)
-	#elif bpp == 2:
-	    #shiftedBits = numpy.right_shift(packedBits, 6)
-	#elif bpp == 3:
-	    #shiftedBits = numpy.right_shift(packedBits, 5)
-	#elif bpp == 4:
-	    #shiftedBits = numpy.right_shift(packedBits, 4)
-	#elif bpp == 8:
-	    #shiftedBits = packedBits
 	
 	#TODO Handle reversed linear order
 	if reversedOrder:
@@ -310,11 +312,6 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	# only processes enough to display a single screen to the user
 	# right away. We spawn another thread to process the entire file
 	rgbArray = list(map(lambda x: self.paletteColors[x], shiftedBits[:displayLength].flatten()))
-	
-	# Only process the whole file once
-	if isNew:
-	    self._processRemainingBytes(shiftedBits)
-	
 	rgbArray2 = numpy.array(rgbArray[:displayLength], dtype=numpy.uint8)
 
 	# 5-D array. Think color pixel cube in a grid
@@ -334,9 +331,9 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	## tile = 3w x 2h
 	#normal = foo.reshape(4,3,3,2,3)
 	#almost = numpy.hstack(normal)
-	#correct = numpy.hstack(almost)	
-	
-	bmp = wx.EmptyBitmap(logicalWidth, logicalHeight, 24)	
+	#correct = numpy.hstack(almost)
+
+	bmp = wx.EmptyBitmap(logicalWidth, logicalHeight, 24)
 	bmp.CopyFromBuffer(orderedAgain.tostring(), wx.BitmapBufferFormat_RGB)
 	self.logicalBmp = bmp
 	
@@ -344,7 +341,6 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	self._scaleImage()
 
     def IndexedBmpUpdate(self):
-	
 	pass
 	
     def OnPaint(self, event):
@@ -363,9 +359,8 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	    #parent.toolBar.Raise()
 
     def DoDrawing(self, dc=None):
-
 	dc = dc
-	virtualWidth = self.displayBmp.GetWidth() +1
+	virtualWidth = self.displayBmp.GetWidth() + 1
 	virtualHeight = self.displayBmp.GetHeight() + 1
 	
 	if dc is None:
@@ -433,6 +428,107 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	    self.curLine = []
 	    self.ReleaseMouse()
 	    self.drawing = False
+
+#####
+# Message handlers
+#####
+
+    def OnCanvasArrangementMsg(self, actionId):
+	"""
+	Handles a canvas arrangement message as posted from the toolpanel.
+	@param actionId
+	         The id of action that should be taken (Byteback, row forward,
+		 etc).
+	"""
+	
+	pixelSize = self.bpp
+	print 'pixel size: ', pixelSize
+	tileSize = self.tileWidth * self.tileHeight * pixelSize
+	print 'tile size: ', tileSize
+	rowSize = self.columns * tileSize
+	pageSize = rowSize * self.rows
+	
+	#def calcEndAddress():
+	    #_bitsInByte = 8
+	    #totalPixels = (self.fileSize * _bitsInByte) / self.bpp
+	    #if totalPixels
+	    #totalPages = 0
+	    #if totalPixels % pageSize == 0:
+		#totalPages = totalPixels / pageSize
+	    #else:
+		#totalPages = totalPixels / pageSize + 1
+		
+	    #if bytesLeft >= pageSize:
+		#self.endAddress = self.endAddress + pageSize
+	    #else:
+		#self.endAddress = self.endAddress + byte
+	addressOffset = 0
+		
+	if actionId == ToolPanel.ID_ShiftLeft:
+	    pass    
+	elif actionId == ToolPanel.ID_ShiftRight:
+	    pass	    
+	elif actionId == ToolPanel.ID_ShiftUp:
+	    pass	    
+	elif actionId == ToolPanel.ID_ShiftDown:
+	    pass	    	
+	
+	elif actionId == ToolPanel.ID_ScrollUp:
+	    addressOffset = -pageSize
+	    
+	elif actionId == ToolPanel.ID_ScrollDown:
+	    addressOffset = +pageSize
+	    
+	elif actionId == ToolPanel.ID_RowBack:
+	    addressOffset = -rowSize
+	
+	elif actionId == ToolPanel.ID_RowForward:
+	    addressOffset = +rowSize
+	
+	elif actionId == ToolPanel.ID_TileBack:
+	    addressOffset = -tileSize
+	
+	elif actionId == ToolPanel.ID_TileForward:
+	    addressOffset = +tileSize
+	
+	elif actionId == ToolPanel.ID_ByteBack:
+	    addressOffset = -pixelSize
+	    
+	elif actionId == ToolPanel.ID_ByteForward:
+	    addressOffset = +pixelSize
+	
+	else:
+	    print 'Invalid canvas arrangement message'
+
+	print 'address offset: ', addressOffset
+	self.beginAddress = self.beginAddress + addressOffset
+	self.endAddress = self.endAddress + addressOffset
+
+	self.UpdateIndexedBitmap(bpp=self.bpp)
+	self.DoDrawing()
+	self.Refresh()
+	
+    def OnCanvasToolMsg(self, toolId):
+	"""
+	Handles a Canvas Tool message as posted from the toolpanel.
+	@param toolId
+	         The id of action that should be taken (Pencil, pick color,
+		 etc).
+	"""
+	if toolId == ToolPanel.ID_Selection:
+	    pass	    
+	elif toolId == ToolPanel.ID_MoveSelection:
+	    pass	    
+	elif toolId == ToolPanel.ID_ColorPicker:
+	    pass	    
+	elif toolId == ToolPanel.ID_PencilDraw:
+	    pass	    
+	elif toolId == ToolPanel.ID_FloodFill:
+	    pass	    
+	elif toolId == ToolPanel.ID_Recolor:
+	    pass	    
+	else: 
+	    print 'Invalid canvas tool message'
 
 #####
 # Getters / Setters
@@ -507,6 +603,56 @@ class ScrolledCanvas(wx.ScrolledWindow):
 # Private Methods
 #####
 
+    def _changeCanvasArrangement(self, shift=None, direction=1):
+	"""
+	@param shift
+	         Size of the shift to make. Either 'byte', 'tile', 'row', or 'page'
+	@param direction
+	        
+	"""
+	pixelSize = self.bpp
+	tileSize = self.tileWidth * self.tileHeight * pixelSize
+	rowSize = self.cols * tileSize
+	pageSize = rowSize * self.rows
+	
+	value = 0
+	
+	#def calcEndAddress():
+	    #_bitsInByte = 8
+	    #totalPixels = (self.fileSize * _bitsInByte) / self.bpp
+	    #if totalPixels
+	    #totalPages = 0
+	    #if totalPixels % pageSize == 0:
+		#totalPages = totalPixels / pageSize
+	    #else:
+		#totalPages = totalPixels / pageSize + 1
+		
+	    #if bytesLeft >= pageSize:
+		#self.endAddress = self.endAddress + pageSize
+	    #else:
+		#self.endAddress = self.endAddress + byte
+
+	
+	# all sizes in pixels, a page is the current visible area
+	if shift == None:
+	    # Just update the beginning and end sizes, don't shift
+	    pass
+	elif shift == 'byte':
+	    value = pixelSize
+	elif shift == 'tile':
+	    value = tileSize
+	elif shift == 'row':
+	    value = rowSize
+	#elif shift == '':
+	    #colSize = self.columns * tileSize
+	elif shift == 'page':
+	    value = pageSize
+	    
+	self.beginAddress = self.beginAddress + value
+	self.endAddress = self.endAddress + value
+	
+
+
     def _calcLogicalBmpSize(self, length):
 	"""
 	Figures out the logical size of the bitmap to be displayed. This is not
@@ -520,14 +666,14 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	
 	print 'length', length
 	print 'full bitmap width: ', fullBmpWidth
-	print 'full bitmap height: ', fullBmpHeight	
+	print 'full bitmap height: ', fullBmpHeight
 	print 'full bitmapsize: ', fullBmpSize
 	tileSize = self.tileWidth * self.tileHeight	
 	logicalBmpSize = [0, 0]
 	
 	# FIXME: Currently we chop off any partial rows
 	# Do we have a full screen of tiles?
-	if length > fullBmpSize:
+	if length >= fullBmpSize:
 	    logicalBmpSize = [fullBmpWidth, fullBmpHeight]
 	    self.numTiles = int(fullBmpSize // tileSize)
 	    print 'full bitmap'
@@ -617,20 +763,7 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	Gets the palette from the palette frame.
 	CanvasFrame (parent ->) TilemFrame (has the ->) PaletteFrame	
 	"""
-	return self.GetParent().GetParent().GetPalette()	
-
-    
-    def _processRemainingBytes(self, arrayBytes):
-	"""
-	Spawns a new thread to take care of mapping the entire byte
-	array to their palette colors
-	"""
-	
-	def lookup():
-	    self.rgbEndData = list(map(lambda x: self.paletteColors[x], arrayBytes))
-
-	processRemaining = Thread(target=lookup)
-	processRemaining.start()
+	return self.GetParent().GetParent().GetPalette()
 
 # This is an example of what to do for the EVT_MOUSEWHEEL event,
 # but since wx.ScrolledWindow does this already it's not
@@ -653,4 +786,3 @@ class ScrolledCanvas(wx.ScrolledWindow):
 #			 vsx, vsy = self.GetViewStart()
 #			 scrollTo = vsy - lines
 #			 self.Scroll(-1, scrollTo)
-

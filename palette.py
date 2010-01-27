@@ -14,6 +14,7 @@ from cubecolourdialog import CubeColourDialog
 from dialogs.newPaletteDialog import NewPaletteDialog
 from dialogs.paletteNameDialog import PaletteNameDialog
 from utils.flowSizer import FlowSizer
+from pubsub import pub
 from wx.lib.agw.flatnotebook import FlatNotebook
 from wx.lib.buttons import GenButton
 from wx.lib.scrolledpanel import ScrolledPanel
@@ -113,7 +114,8 @@ class PaletteFrame(wx.MiniFrame):
         self.book = ColoringBook(self)	
 	
 	self.__createPaletteMenu()
-        self.Bind(ce.EVT_PALETTE_POSITION,  self.OnPalettePos, self.book.GetCurrentPage())
+	pub.subscribe(self.OnPalettePosMsg, 'palettePosition')
+        #self.Bind(ce.EVT_PALETTE_POSITION,  self.OnPalettePos, self.book.GetCurrentPage())
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.book, 1, wx.EXPAND)
@@ -136,7 +138,7 @@ class PaletteFrame(wx.MiniFrame):
 	    self.book.AddPage(page)
 	    page.UpdateAll()
 	    self.book.Thaw()
-	    self.Bind(ce.EVT_PALETTE_POSITION,  self.OnPalettePos, page)
+	    #self.Bind(ce.EVT_PALETTE_POSITION,  self.OnPalettePos, page)
 	    self.Refresh()
     
     def OnOpen(self, evt):
@@ -181,7 +183,7 @@ class PaletteFrame(wx.MiniFrame):
 		self.book.AddPage(page)
 		page.UpdateAll()
 		self.book.Thaw()
-		self.Bind(ce.EVT_PALETTE_POSITION,  self.OnPalettePos, page)
+		#self.Bind(ce.EVT_PALETTE_POSITION,  self.OnPalettePos, page)
 		self.Refresh()
 		    
 	openDialog.Destroy()	 	
@@ -296,15 +298,13 @@ class PaletteFrame(wx.MiniFrame):
 	page.UpdateAll()
 	self.Refresh()
 	
-    def OnPalettePos(self, evt):
+    def OnPalettePosMsg(self, msg):
 	"""
 	Sets where the palette should 'begin' on the bottom toolbar text field.
-	This event passes to the MDI Parent frame (where it will be redirected
-	to the currently selected MDI child frame).
+	@param msg
+	        Where the palette should 'begin' on the bottom toolbar text field.
 	"""
-	pos = evt.GetPalettePos()
-	self.toolBar.NumColors.ChangeValue(str(pos))
-	evt.Skip()	
+	self.toolBar.NumColors.ChangeValue(str(msg))	
 	
     def GetCurrentPalette(self):
 	"""
@@ -314,10 +314,6 @@ class PaletteFrame(wx.MiniFrame):
 	buttonList = page.GetColorEntries()
 	rgbPalette = map(lambda button : button.GetBackgroundColour().Get(), buttonList)
 	return rgbPalette
-    
-    # Was this here for a reason?
-    #def GetPalettes(self):
-        #return self.palettes    
 
     def __createPaletteMenu(self):
         """
@@ -430,6 +426,8 @@ class ColoringPage(ScrolledPanel):
 	self.size = size
 	self.encoding = encoding
 	self.title = title
+	self.palettePos = 1
+	
 	self.colorButtons = [] # Each button corresponds to 1 palette color
 
 	if data:
@@ -463,13 +461,14 @@ class ColoringPage(ScrolledPanel):
     def OnPalettePos(self, event):
 	"""
 	Indicates that the user wants to change where the palette should 
-	'virtually' begin. Handled by the PaletteFrame.
+	'virtually' begin. Message is gotten by the PaletteFrame.
 	"""
 	try:
 	    button = event.GetEventObject()
 	    buttonPos = self.colorButtons.index(button) + 1
-	    evt = ce.PalettePosEvt(ce.theEVT_PALETTE_POSITION, id=self.GetId(), pos=buttonPos)
-	    self.GetEventHandler().ProcessEvent(evt)
+	    pub.sendMessage('palettePosition', msg=buttonPos)
+	    #evt = ce.PalettePosEvt(ce.theEVT_PALETTE_POSITION, id=self.GetId(), pos=buttonPos)
+	    #self.GetEventHandler().ProcessEvent(evt)
 	except ValueError, exception:
 	    print exception
 

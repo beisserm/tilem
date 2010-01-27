@@ -111,10 +111,7 @@ class TilemFrame(wx.MDIParentFrame):
 	self.winCount = 0
 	self.paletteFrame = palette.PaletteFrame(self)
 	#self.Bind(pue.EVT_PALETTE_UPDATE, self.OnUpdateColorPaletteEntry, id=self.GetId())
-	self.toolPanel = ToolPanel(self)
-	
-	# MiniFrame Event Catchers
-	self.Bind(ce.EVT_TOOL, self.OnToolEvent)	
+	self.toolPanel = ToolPanel(self)	
 	
 	self.tb1 = self.CreateTopToolBar()
 	
@@ -596,10 +593,6 @@ class TilemFrame(wx.MDIParentFrame):
 	AboutDialog()
 #Help
 
-#ToolPanel Events
-    def OnToolEvent(self, evt):
-	print 'Got that shit!'
-
 # Others
     def OnEraseBackground(self, evt):
 	dc = evt.GetDC()
@@ -632,31 +625,6 @@ class TilemFrame(wx.MDIParentFrame):
 	
 	if activeWindow != None:
 	    currentSize = activeWindow.OnPaletteUpdate()
-	    
-    
-    def SetupIcons(self):
-	pass
-        #colorPickerCursor = Toolkit.getDefaultToolkit().createCustomCursor(
-                #new ImageIcon(cl.getResource("icons/tool-color-picker-16.png")).getImage(), new Point(1,12), "Pick Color");
-        #pencilCursor = Toolkit.getDefaultToolkit().createCustomCursor(
-                #new ImageIcon(cl.getResource("icons/tool-pencil-16.png")).getImage(), new Point(3,15), "Pencil");
-        #fillCursor = Toolkit.getDefaultToolkit().createCustomCursor(
-                #new ImageIcon(cl.getResource("icons/tool-bucket-fill-16.png")).getImage(), new Point(13,15), "Fill");
-        #selectionCursor = Toolkit.getDefaultToolkit().createCustomCursor(
-                #new ImageIcon(cl.getResource("icons/tool-selection-16.png")).getImage(), new Point(6,6), "Move Selection");
-	
-            #image.SetOptionInt(wx.IMAGE_OPTION_CUR_HOTSPOT_X, 1)
-            #image.SetOptionInt(wx.IMAGE_OPTION_CUR_HOTSPOT_Y, 1)
-
-            ## make the image into a cursor
-            #cursor = wx.CursorFromImage(image)
-
-        #else:
-            ## create one of the stock (built-in) cursors
-            #cursor = wx.StockCursor(cnum)
-
-        ## set the cursor for the window
-        #self.win.SetCursor(cursor)	
 
 #----------------------------------------------------------------------
 
