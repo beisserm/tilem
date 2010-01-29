@@ -11,13 +11,17 @@ from pubsub import pub
 import ToolPanel
 import utils.flowSizer as FlowSizer
 
-zoomSelections = ['50%', '75%', '100%', '125%', '150%', '175%', '200%', '225%', 
-                  '250%', '275%', '300%', '350%', '400%', '450%', '500%', 
-                  '550%', '600%']
-zoomMapping = {   '50%':4,   '75%':6,  '100%':8,  '125%':10, '150%':12, 
-                 '175%':14, '200%':16, '225%':18, '250%':20, '275%':22,
-                 '300%':24, '350%':28, '400%':32, '450%':36, '500%':40,
-                 '550%':44, '600%':48}
+zoomSelections = ['0%', '25%', '50%', '75%', '100%', '125%', '150%', '175%', '200%']
+#, '225%', 
+#                  '250%', '275%', '300%', '350%', '400%', '450%', '500%', 
+#                  '550%', '600%']
+
+zoomMapping = { '0%':1, '25%':2, '50%':4,   '75%':6,  '100%':8,  '125%':10, '150%':12, 
+                '175%':14, '200%':16}
+
+#, '225%':18, '250%':20, '275%':22,
+#                 '300%':24, '350%':28, '400%':32, '450%':36, '500%':40,
+#                 '550%':44, '600%':48}
 
 decoderSelections = ['1bpp linear', '1bpp linear, reverse-order', '1bpp planar',
                      '2bpp linear', '2bpp linear, reverse-order', '2bpp planar',
@@ -290,10 +294,7 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	The width and height of the bitmap is based upon the tile (sprite) size 
 	specified by the user.
 	"""
-	# uint8
 	workingBits = self.cachedBits[self.beginAddress:self.endAddress]
-	print workingBits[:16]
-	print '\n\n'
 	
 	shape = (int(math.ceil(workingBits.size / self.bpp)), self.bpp)	
 	workingBits = workingBits.reshape(shape)
@@ -302,23 +303,17 @@ class ScrolledCanvas(wx.ScrolledWindow):
 
 	shiftFactor = (8-self.bpp)
 	shiftedBits = numpy.right_shift(packedBits, shiftFactor)
-	print 'shifted 1\n'
-	print shiftedBits[:16]
-	##TODO Handle reversed linear order
 	
 	if reversedOrder == True:
-	    # There is no bit swap in numpy...
-	    seven = numpy.left_shift(shiftedBits, 7)  & 0b10000000
-	    six   = numpy.left_shift(shiftedBits, 5)  & 0b01000000
-	    five  = numpy.left_shift(shiftedBits, 3)  & 0b00100000
-	    four  = numpy.left_shift(shiftedBits, 1)  & 0b00010000
-	    three = numpy.right_shift(shiftedBits, 1) & 0b00001000
-	    two   = numpy.right_shift(shiftedBits, 3) & 0b00000100
-	    one   = numpy.right_shift(shiftedBits, 5) & 0b00000010
-	    zero  = numpy.right_shift(shiftedBits, 7) & 0b00000001
-	    shiftedBits = zero | one | two | three | four | five | six | seven
-	    print 'shifted 2\n'
-	    print shiftedBits[:16]
+	    original = numpy.array(shiftedBits)
+
+	    oddEntries = numpy.array(original)
+	    oddEntries[::2] = 0
+
+	    evenEntries = numpy.roll(original, 1)
+	    evenEntries[::2] = 0
+
+	    shiftedBits = evenEntries + numpy.roll(oddEntries, -1)
 
 	self.paletteColors = self._getPalette()
 	
