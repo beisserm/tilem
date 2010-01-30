@@ -451,6 +451,12 @@ class ScrolledCanvas(wx.ScrolledWindow):
 		 etc).
 	"""
 	
+	# If we don't have focus don't bother with the rest
+	childFrame = self.GetParent()
+	currentSelectedFrame = self.GetParent().GetParent().GetActiveChild()
+	if childFrame != currentSelectedFrame:	
+	    return
+	
 	pixelSize = self.bpp
 	tileSize = self.tileWidth * self.tileHeight * pixelSize
 	rowSize = self.columns * tileSize
@@ -519,16 +525,20 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	self.Refresh()
 	
     def OnCanvasShiftMsg(self, shiftId):
-		
-	if shiftId == ToolPanel.ID_ShiftLeft:
-	    pass    
-	elif shiftId == ToolPanel.ID_ShiftRight:
-	    pass	    
-	elif shiftId == ToolPanel.ID_ShiftUp:
-	    pass	    
-	elif shiftId == ToolPanel.ID_ShiftDown:
-	    pass	
-	pass
+	"""
+	TODO: This isn't going to be easy...
+	Handles a Canvas Shift message as posted from the toolpanel.
+	@param shiftId
+	         The id of the action that should be taken (shift left, right,
+		 down, etc).
+	"""
+	childFrame = self.GetParent()
+	currentSelectedFrame = self.GetParent().GetParent().GetActiveChild()
+	if childFrame == currentSelectedFrame:
+	    {ToolPanel.ID_ShiftLeft:   self._onShiftLeft,
+	     ToolPanel.ID_ShiftRight:  self._onShiftRight,
+	     ToolPanel.ID_ShiftUp:     self._onShiftUp,
+	     ToolPanel.ID_ShiftDown:   self._onShiftDown,}[shiftId]()
 	
     def OnCanvasToolMsg(self, toolId):
 	"""
@@ -537,21 +547,70 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	         The id of action that should be taken (Pencil, pick color,
 		 etc).
 	"""
-	if toolId == ToolPanel.ID_Selection:
-	    pass	    
-	elif toolId == ToolPanel.ID_MoveSelection:
-	    pass	    
-	elif toolId == ToolPanel.ID_ColorPicker:
-	    pass	    
-	elif toolId == ToolPanel.ID_PencilDraw:
-	    pass	    
-	elif toolId == ToolPanel.ID_FloodFill:
-	    pass	    
-	elif toolId == ToolPanel.ID_Recolor:
-	    pass	    
-	else: 
-	    print 'Invalid canvas tool message'
+	{ToolPanel.ID_Selection:    self._onSelect,
+        ToolPanel.ID_MoveSelection: self._onMoveSelection,
+        ToolPanel.ID_ColorPicker:   self._onColorSelector,
+        ToolPanel.ID_PencilDraw:    self._onPencilDraw,
+        #ToolPanel.ID_DrawLine:     self._onDrawLine,
+        ToolPanel.ID_FloodFill:     self._onFloodFill,
+        ToolPanel.ID_Recolor:       self._onColorReplace,}[toolId]()
 
+#-----------------------------------------------------------------------------
+    def _onSelect(self):
+        image = wx.Image(u"icons/tool-selection-16.png", wx.wx.BITMAP_TYPE_PNG)
+        image.SetOptionInt(wx.IMAGE_OPTION_CUR_HOTSPOT_X, 6)
+        image.SetOptionInt(wx.IMAGE_OPTION_CUR_HOTSPOT_Y, 6)   
+        cursor = wx.CursorFromImage(image)
+        self.SetCursor(cursor)
+    
+    def _onMoveSelection(self):
+        cursor = wx.StockCursor(wx.CURSOR_ARROW)    
+        self.SetCursor(cursor)
+    
+    def _onColorSelector(self):
+        image = wx.Image(u"icons/tool-color-picker-16.png", wx.wx.BITMAP_TYPE_PNG)
+        image.SetOptionInt(wx.IMAGE_OPTION_CUR_HOTSPOT_X, 1)
+        image.SetOptionInt(wx.IMAGE_OPTION_CUR_HOTSPOT_Y, 12)
+        cursor = wx.CursorFromImage(image)
+        self.SetCursor(cursor)        
+    
+    def _onPencilDraw(self):
+        print 'OnPencilDraw'
+        image = wx.Image(u"icons/tool-pencil-16.png", wx.wx.BITMAP_TYPE_PNG)
+        image.SetOptionInt(wx.IMAGE_OPTION_CUR_HOTSPOT_X, 3)
+        image.SetOptionInt(wx.IMAGE_OPTION_CUR_HOTSPOT_Y, 15)   
+        cursor = wx.CursorFromImage(image)
+        self.SetCursor(cursor)
+    
+    #def _onDrawLine(self):
+        #pass
+    
+    def _onFloodFill(self):
+        image = wx.Image(u"icons/tool-bucket-fill-16.png", wx.wx.BITMAP_TYPE_PNG)
+        image.SetOptionInt(wx.IMAGE_OPTION_CUR_HOTSPOT_X, 13)
+        image.SetOptionInt(wx.IMAGE_OPTION_CUR_HOTSPOT_Y, 15)   
+        cursor = wx.CursorFromImage(image)
+        self.SetCursor(cursor)
+    
+    def _onColorReplace(self):
+        cursor = wx.StockCursor(wx.CURSOR_ARROW)
+        self.SetCursor(cursor)
+    
+#------------------------------------------------------------------------------    
+    def _onShiftLeft(self):
+        pass
+    
+    def _onShiftRight(self):
+        pass
+    
+    def _onShiftUp(self):
+        pass
+    
+    def _onShiftDown(self):
+        pass
+    
+#------------------------------------------------------------------------------    	    
+	    
 #####
 # Getters / Setters
 #####
@@ -681,8 +740,6 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	    
 	self.beginAddress = self.beginAddress + value
 	self.endAddress = self.endAddress + value
-	
-
 
     def _calcLogicalBmpSize(self, length):
 	"""

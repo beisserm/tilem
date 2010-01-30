@@ -10,35 +10,35 @@ class NewPaletteDialog(wx.Dialog):
         """
         Initializes the dialog
         """
-        wx.Dialog.__init__(self, id=-1,
+        wx.Dialog.__init__(self, id=wx.ID_ANY,
               name='NewPaletteDialog', parent=prnt, pos=wx.Point(437, 238),
 #              size=wx.Size(300, 225), 
               style=wx.DEFAULT_DIALOG_STYLE,
               title='Create New Palette')
         self.SetClientSize(wx.Size(265, 152))
 
-        self.nameText = wx.StaticText(id=-1, label='Name', parent=self,
+        self.nameText = wx.StaticText(id=wx.ID_ANY, label='Name', parent=self,
                                       pos=wx.Point(16, 16), size=wx.Size(35, 13))
         
-        self.nameField = wx.TextCtrl(id=-1, parent=self, value="New Palette",
+        self.nameField = wx.TextCtrl(id=wx.ID_ANY, parent=self, value="New Palette",
                                      size=wx.Size(150, 21), pos=wx.Point(64, 12))
         
-        self.sizeTxt = wx.StaticText(id=-1,
+        self.sizeTxt = wx.StaticText(id=wx.ID_ANY,
               label='Size', name='sizeTxt', parent=self, pos=wx.Point(16, 48),
               size=wx.Size(19, 13), style=0)
         
-        self.sizeField = wx.lib.intctrl.IntCtrl(id=-1, allow_long=False,
+        self.sizeField = wx.lib.intctrl.IntCtrl(id=wx.ID_ANY, allow_long=False,
               allow_none=False, default_color=wx.BLACK,
               limited=False, max=512, min=1,
               name='heightField', oob_color=wx.RED, parent=self,
               pos=wx.Point(64, 44), size=wx.Size(100, 21), style=0, value=256)
 
-        self.formatText = wx.StaticText(id=-1,
+        self.formatText = wx.StaticText(id=wx.ID_ANY,
               label='Format', name='formatText', parent=self, pos=wx.Point(16,
               78), size=wx.Size(34, 13))
 
         self.colorEncoding = wx.ComboBox(choices=bppSelections,
-              id=-1, name='colorEncoding', parent=self,
+              id=wx.ID_ANY, name='colorEncoding', parent=self,
               pos=wx.Point(64, 74), size=wx.Size(130, 21), style=wx.CB_READONLY, value='4bpp CGA')
 
         self.OkButton = wx.Button(id=wx.ID_OK, label='OK',
