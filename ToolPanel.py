@@ -24,7 +24,6 @@ ID_ColorPicker = wx.NewId()
 ID_PencilDraw = wx.NewId() 
 ID_FloodFill = wx.NewId() 
 ID_Recolor = wx.NewId()
-#ID_Zoom = wx.NewId()
 #ID_DrawLine = wx.NewId() 
 
 FRAME_SIZE = wx.Size(72, 296)

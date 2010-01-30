@@ -8,7 +8,6 @@ import re
 import wx
 
 #from cubecolourdialog import CubeColourDialog
-#import events.customEvent as ce
 
 from cubecolourdialog import CubeColourDialog
 from dialogs.newPaletteDialog import NewPaletteDialog
@@ -57,6 +56,23 @@ defaultPalette = [
     '#000000', '#000000', '#784818', '#A05828', '#E07858', '#F898A8', '#A08860', '#D0A870',
     '#F8F860', '#E0E0E0', '#F8F8F8', '#007808', '#00A000', '#00D050', '#802018', '#383058']
 
+# TODO: Verify that each color does actually get mapped correctly to the nesdev one
+#       and remove this
+# There will always be some discrepancies as to the exact colors used by the NES due to
+# the nature of TV's. Nesticle and subsequently fceultra use a lookup table in their
+# exports of palettes. This palette sequence is directly from tile-molester and "it
+# just works" (tm). Each color in this palette gets converted to the closest color in
+# the nesdev palette anyways so it doesn't really matter.
+nesticlePalette = [
+    '#757575', '#271B8F', '#0000AB', '#47009F', '#8F0077', '#AB0013', '#A70000', '#7F0B00',
+    '#432F00', '#004700', '#005100', '#003F17', '#1B3F5F', '#000000', '#000000', '#000000',
+    '#BCBCBC', '#0073EF', '#233BEF', '#8300F3', '#BF00BF', '#E7005B', '#DB2B00', '#CB4F0F',
+    '#8B7300', '#009700', '#00AB00', '#00933B', '#00838B', '#000000', '#000000', '#000000',
+    '#FFFFFF', '#3FBFFF', '#5F97FF', '#A78BFD', '#F77BFF', '#FF77B7', '#FF7763', '#FF9B3B',
+    '#F3BF3F', '#83D313', '#4FDF4B', '#58F898', '#00EBDB', '#000000', '#000000', '#000000',
+    '#FFFFFF', '#ABE7FF', '#C7D7FF', '#D7CBFF', '#FFC7FF', '#FFC7DB', '#FFBFB3', '#FFDBAB',
+    '#FFE7A3', '#E3FFA3', '#ABF3BF', '#B3FFCF', '#9FFFF3', '#000000', '#000000', '#000000']
+
 #Thanks nesdev http://nesdev.parodius.com/nespal.txt
 nesPalette = [
     '#808080', '#0000BB', '#3700BF', '#8400A6', '#BB006A', '#B7001E', '#B30000', '#912600',
@@ -71,6 +87,11 @@ nesPalette = [
 cgaPalette = [
     '#000000', '#0000AA', '#00AA00', '#00AAAA', '#AA0000', '#AA00AA', '#AA5500', '#AAAAAA',
     '#555555', '#5555FF', '#55FF55', '#55FFFF', '#FF5555', '#FF55FF', '#FFFF55', '#FFFFFF']
+
+#WTF was this used for in tile molestor
+#String EGAString = 
+#"000000 990000 009900 CC6600 000099 990099 009999 CCCCCC" +
+#"666666 FF6666 66FF66 FFFF66 6666FF FF66FF 66FFFF FFFFFF";
 
 # The IBM Enhanced Graphics Adapter (EGA) was able to create a total of 64 colors
 # by using 2 bits per channel. Of these 64 colors', 16 could be displayed on screen
@@ -259,7 +280,7 @@ class PaletteFrame(wx.MiniFrame):
 #</palettefilter>
 #<palettefilter extensions="pal" colorformat="RIFF" size="256" offset="24" endianness="big">
 #<description>Windows Palette (*.pal)</description>		
-		# Need to check all these offsets, might be off by 1
+		# seek is the position of where to start reading. ie start at 22791
 		if ext.startswith('st'):
 		    # NESticle, PalSize = 32, offset = 22791
 		    selectedFile.seek(22791)
@@ -312,6 +333,21 @@ class PaletteFrame(wx.MiniFrame):
 	""" 
 	page = self.book.GetCurrentPage()
 	buttonList = page.GetColorEntries()
+	
+	#startIndex = int(self.toolBar.NumColors.GetValue()) - 1
+
+	# Wrap around the end and fill with black/white...
+	## Wrap around the end
+	#virtualPalette = buttonList[startIndex:]
+	#if startIndex != 0:
+	    #end = buttonList[:(startIndex)]
+	    #begin = [virtualPalette, end]
+	    #flatList = list(itertools.chain(*begin))
+	    #print 'length', len(flatList)
+	    #virtualPalette = flatList
+
+	#rgbPalette = map(lambda button : button.GetBackgroundColour().Get(), virtualPalette)	
+	
 	rgbPalette = map(lambda button : button.GetBackgroundColour().Get(), buttonList)
 	return rgbPalette
 
