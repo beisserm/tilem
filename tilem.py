@@ -393,17 +393,6 @@ class TilemFrame(wx.MDIParentFrame):
 	return helpMenu
 
 #####
-# Passthrough getters
-#####
-
-    def GetPalette(self):
-	"""
-	Passthrough getter to allow a canvas to get the current palette
-	"""
-	return self.paletteFrame.GetCurrentPalette()
-	
-    
-#####
 # Event handlers
 #####
 

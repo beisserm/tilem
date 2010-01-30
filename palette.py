@@ -1,5 +1,6 @@
 #from __future__ import with_statemen
 import csv
+import itertools
 import math
 import numpy
 import os
@@ -136,7 +137,6 @@ class PaletteFrame(wx.MiniFrame):
 	
 	self.__createPaletteMenu()
 	pub.subscribe(self.OnPalettePosMsg, 'palettePosition')
-        #self.Bind(ce.EVT_PALETTE_POSITION,  self.OnPalettePos, self.book.GetCurrentPage())
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.book, 1, wx.EXPAND)
@@ -154,12 +154,9 @@ class PaletteFrame(wx.MiniFrame):
 	    size = paletteDlg.GetSize()
 	    colorEncoding = paletteDlg.GetColorEncoding()
 	    title = paletteDlg.GetName()
-	    self.book.Freeze()
 	    page = ColoringPage(self, size, colorEncoding, title)
 	    self.book.AddPage(page)
 	    page.UpdateAll()
-	    self.book.Thaw()
-	    #self.Bind(ce.EVT_PALETTE_POSITION,  self.OnPalettePos, page)
 	    self.Refresh()
     
     def OnOpen(self, evt):
@@ -193,18 +190,11 @@ class PaletteFrame(wx.MiniFrame):
 				paletteStr.append(temp)
 		except csv.Error, e:
 		    print ('Error loading palette: line %d: %s' % (reader.line_num, e))
-  
-		size = len(paletteStr)
-		if size > 512:
-		    size = 512
 		    
 		title = fileName
-		self.book.Freeze()
 		page = ColoringPage(self, size, '8bpp EGA', title, data=paletteStr)
 		self.book.AddPage(page)
 		page.UpdateAll()
-		self.book.Thaw()
-		#self.Bind(ce.EVT_PALETTE_POSITION,  self.OnPalettePos, page)
 		self.Refresh()
 		    
 	openDialog.Destroy()	 	
@@ -250,22 +240,7 @@ class PaletteFrame(wx.MiniFrame):
 	    ZSNES
 	    
 	Although it's trivial to add support for more
-	"""
-	def int2bin(n, count=24):
-	    """returns the binary of integer n, using count number of digits"""
-	    return "".join([str((n >> y) & 1) for y in range(count-1, -1, -1)])	
-	
-	def processPaletteString(rawString):
-	    # TODO: This is stupid, use numpy...
-	    print 'Doing something!'
-	    palette = []
-	    for i in xrange(len(rawString)):
-		# Stupid python binary printing hack
-		wx.Color
-		raw = "#".join([str((i >> y) & 1) for y in range(8-1, -1, -1)])
-		#red = int(raw[0:2])
-		#newColor = "#%02x%02x%02x" % (red, green, blue)	
-	
+	"""	
 	openDialog = wx.FileDialog(self, "Choose a file", "", "", saveStateFilter, wx.OPEN )
 	if openDialog.ShowModal() == wx.ID_OK:
 	    try:
@@ -274,6 +249,7 @@ class PaletteFrame(wx.MiniFrame):
 		ext = fileName.split('.')[-1]
 		selectedFile = open(openDialog.GetPath(), mode='rb')		
 		palette = ""
+		page = None
 		
 #<palettefilter extensions="tpl" colorformat="CF01" size="256" offset="4" endianness="big">
 #<description>Tile Layer Pro palette (*.tpl)</description>
@@ -283,15 +259,19 @@ class PaletteFrame(wx.MiniFrame):
 		# seek is the position of where to start reading. ie start at 22791
 		if ext.startswith('st'):
 		    # NESticle, PalSize = 32, offset = 22791
+		    palSize = 32
 		    selectedFile.seek(22791)
-		    palette = selectedFile.read(32)
-		    for i in palette:
-			print i
-			
+		    palette = selectedFile.read(palSize)
+		    paletteColors = map(lambda n: nesticlePalette[ord(n)], palette)
+		    page = ColoringPage(self, palSize, '6bpp NES', 'Nesticle', data=paletteColors)
+		    
 		elif ext.startswith('fc'):
 		    # FCEUltra, PalSize = 32, offset = 4276
+		    palSize = 32
 		    selectedFile.seek(4276)
 		    palette = selectedFile.read(32)
+		    paletteColors = map(lambda n: nesticlePalette[ord(n)], palette)
+		    page = ColoringPage(self, palSize, '6bpp NES', 'Nesticle', data=paletteColors)		    
 		    
 		elif ext.startswith('gs'):
 		    # Kega/Gens, Palsize = 64, offset = 274 
@@ -306,7 +286,9 @@ class PaletteFrame(wx.MiniFrame):
 		else:
 		    print 'Unsupported file'
 		    
-		processPaletteString(palette)
+		self.book.AddPage(page)
+		page.UpdateAll()
+		self.Refresh()
 	    except IOError:
 		pass
 	    
@@ -326,30 +308,6 @@ class PaletteFrame(wx.MiniFrame):
 	        Where the palette should 'begin' on the bottom toolbar text field.
 	"""
 	self.toolBar.NumColors.ChangeValue(str(msg))	
-	
-    def GetCurrentPalette(self):
-	"""
-	Returns a list of the colors in the current palette
-	""" 
-	page = self.book.GetCurrentPage()
-	buttonList = page.GetColorEntries()
-	
-	#startIndex = int(self.toolBar.NumColors.GetValue()) - 1
-
-	# Wrap around the end and fill with black/white...
-	## Wrap around the end
-	#virtualPalette = buttonList[startIndex:]
-	#if startIndex != 0:
-	    #end = buttonList[:(startIndex)]
-	    #begin = [virtualPalette, end]
-	    #flatList = list(itertools.chain(*begin))
-	    #print 'length', len(flatList)
-	    #virtualPalette = flatList
-
-	#rgbPalette = map(lambda button : button.GetBackgroundColour().Get(), virtualPalette)	
-	
-	rgbPalette = map(lambda button : button.GetBackgroundColour().Get(), buttonList)
-	return rgbPalette
 
     def __createPaletteMenu(self):
         """
@@ -464,14 +422,24 @@ class ColoringPage(ScrolledPanel):
 	self.title = title
 	self.palettePos = 1
 	
+	pub.subscribe(self.OnPaletteRequest, 'paletteRequest')
+	
 	self.colorButtons = [] # Each button corresponds to 1 palette color
 
+	if size > 512:
+	    size = 512
+	elif size < 256:
+	    delta = 256 - size
+	    for missing in xrange(delta):
+		data.append('#000000')
+	    size = 256
+	
 	if data:
 	    for color in data:
-		self.__createButton(color)
+		self._createButton(color)
 	else:
 	    for color in range(size):
-		self.__createButton()
+		self._createButton()
 
     def OnPickColor(self, evt):
 	"""
@@ -501,12 +469,20 @@ class ColoringPage(ScrolledPanel):
 	"""
 	try:
 	    button = event.GetEventObject()
-	    buttonPos = self.colorButtons.index(button) + 1
-	    pub.sendMessage('palettePosition', msg=buttonPos)
-	    #evt = ce.PalettePosEvt(ce.theEVT_PALETTE_POSITION, id=self.GetId(), pos=buttonPos)
-	    #self.GetEventHandler().ProcessEvent(evt)
+	    self.palettePos = self.colorButtons.index(button)
+	    pub.sendMessage('palettePosition', msg=self.palettePos)
+	    virtualPalette = self._updateVirtualPalette()
+	    pub.sendMessage('paletteUpdate', msg=virtualPalette)
 	except ValueError, exception:
 	    print exception
+	    
+    def OnPaletteRequest(self, msg):
+	"""
+	Used to request the palette when a canvas is first drawn
+	"""
+	print 'Got palette request!'
+	virtualPalette = self._updateVirtualPalette()
+	pub.sendMessage('paletteResponse', msg=virtualPalette)
 
     def UpdateAll(self):
 	for entry in self.colorButtons:
@@ -524,13 +500,33 @@ class ColoringPage(ScrolledPanel):
     def SetEncoding(self, encoding):
 	self.encoding = encoding
 
-    def __createButton(self, color=u'#FFFFFF'):
+	
+    def _updateVirtualPalette(self):
+	"""
+	
+	""" 
+	startIndex = self.palettePos - 1
+
+	# Wrap around the end and fill with black
+	virtualPalette = self.colorButtons[startIndex:]
+
+	if startIndex != 0:
+	    end = self.colorButtons[:(startIndex)]
+	    begin = [virtualPalette, end]
+	    flatList = list(itertools.chain(*begin))
+	    virtualPalette = flatList
+
+	mappedPalette = map(lambda button : button.GetBackgroundColour().Get(), virtualPalette)
+
+	return mappedPalette	
+	
+    def _createButton(self, color=u'#FFFFFF'):
 	"""
 	@param color
 	         6 digit RGB Hex string preceeded by a '#'
 	"""
 	colorBox = ColoringButton(prnt=self, colorStr=color)
-	colorBox.Bind(wx.EVT_BUTTON, self.OnPickColor, colorBox)
+	colorBox.Bind(wx.EVT_MIDDLE_UP, self.OnPickColor, colorBox)
 	colorBox.Bind(wx.EVT_RIGHT_UP, self.OnPalettePos, colorBox)
 	self.colorButtons.append(colorBox)
 	self.sizer.Add(colorBox, 0, wx.ALL, 1)

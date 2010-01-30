@@ -111,13 +111,7 @@ class CanvasFrame(wx.MDIChildFrame):
 	
 	self.canvas.DoDrawing()
 	self.canvas.Refresh()	
-    
-    def OnPaletteUpdate(self):
-	bpp = int(self.canvas.GetBpp())
-	self.canvas.UpdateIndexedBitmap(bpp)
-	self.canvas.DoDrawing()
-	self.canvas.Refresh()
-	
+
 #####
 # Passthrough functions
 #####
@@ -181,10 +175,16 @@ class ScrolledCanvas(wx.ScrolledWindow):
     """	
     def __init__(self, parent, id = -1, size = wx.DefaultSize, fileStr = None, fileSize=None):
 	wx.ScrolledWindow.__init__(self, parent, id, (0, 0), size=size, style=wx.SUNKEN_BORDER)	
-
+	
 	pub.subscribe(self.OnCanvasArrangementMsg, 'canvasArrangement')
 	pub.subscribe(self.OnCanvasShiftMsg, 'canvasShift')
 	pub.subscribe(self.OnCanvasToolMsg, 'canvasTool')
+	pub.subscribe(self.OnPaletteUpdateMsg, 'paletteUpdate')
+	
+	# This will only be updated through messaging
+	self.paletteColors = []
+	pub.subscribe(self.OnPaletteResponseMsg, 'paletteResponse')
+	pub.sendMessage('paletteRequest', msg=True)
 	
 	# filesize in bytes
 	self.fileSize = fileSize
@@ -221,14 +221,12 @@ class ScrolledCanvas(wx.ScrolledWindow):
 	self.logicalBmp = None
 	self.displayBmp	= None
 	
-	self.paletteColors = self._getPalette()
-	
 	self.numTiles = 0
 	
 	if fileStr:
 	    try:
 		self.fileHandle = open(fileStr, 'rb')
-				
+		
 		fileStats = os.stat(fileStr)
 		self.fileSize = fileStats[stat.ST_SIZE]
 		
@@ -315,7 +313,7 @@ class ScrolledCanvas(wx.ScrolledWindow):
 
 	    shiftedBits = evenEntries + numpy.roll(oddEntries, -1)
 
-	self.paletteColors = self._getPalette()
+	#self.paletteColors = self._getPalette()
 	
 	# Figure out how big our bitmap should be
 	# Fixme: This chops off partial rows and partial tiles
@@ -554,6 +552,29 @@ class ScrolledCanvas(wx.ScrolledWindow):
         #ToolPanel.ID_DrawLine:     self._onDrawLine,
         ToolPanel.ID_FloodFill:     self._onFloodFill,
         ToolPanel.ID_Recolor:       self._onColorReplace,}[toolId]()
+	
+    def OnPaletteUpdateMsg(self, msg):
+	"""
+	
+	"""
+	childFrame = self.GetParent()
+	currentSelectedFrame = self.GetParent().GetParent().GetActiveChild()
+	if childFrame != currentSelectedFrame:	
+	    return
+	
+	self.paletteColors = msg
+	self.UpdateIndexedBitmap()
+	self.DoDrawing()
+	self.Refresh()
+	
+    def OnPaletteResponseMsg(self, msg):
+	"""
+	TODO: Do something if there are no palettes available?	
+	Message is received when the canvas is first created. This is used as
+	an initial handshake between a palette and it's corresponding canvas.
+	"""
+	self.paletteColors = msg
+	
 
 #-----------------------------------------------------------------------------
     def _onSelect(self):
